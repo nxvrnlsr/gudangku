@@ -66,31 +66,35 @@ export default function ReceiptsModule() {
   /* ── Submit ────────────────────────── */
   const handleSave = async (confirmAfter: boolean) => {
     if (!form.warehouse_id) { toast.error('Pilih gudang tujuan'); return; }
-    if (lines.some(l => !l.item_id || !l.qty_received)) { toast.error('Semua baris harus memiliki barang dan qty'); return; }
+    if (lines.some(l => !l.item_id)) { toast.error('Semua baris harus memiliki barang'); return; }
+    if (lines.some(l => !l.qty_received || parseFloat(l.qty_received) <= 0)) {
+      toast.error('Qty setiap baris harus lebih dari 0'); return;
+    }
+    if (confirmAfter && lines.some(l => !l.batch_number || !l.expiry_date)) {
+      toast.error('No. Batch dan Tanggal Kadaluarsa wajib diisi untuk konfirmasi'); return;
+    }
     setSaving(true);
     try {
       const body = {
-        ...form,
+        warehouse_id:      form.warehouse_id,
+        supplier_name:     form.supplier_name,
+        receipt_date:      form.receipt_date,
+        notes:             form.notes,
+        confirm_immediately: confirmAfter,
         lines: lines.map(l => ({
           item_id:      l.item_id,
-          qty_received: parseFloat(l.qty_received),
-          unit_cost:    parseFloat(l.unit_cost) || 0,
-          batch_number: l.batch_number || undefined,
-          expiry_date:  l.expiry_date  || undefined,
-          mfg_date:     l.mfg_date     || undefined,
+          qty:          parseFloat(l.qty_received),
+          cost_price:   parseFloat(l.unit_cost) || 0,
+          batch_number: l.batch_number || null,
+          expiry_date:  l.expiry_date  || null,
+          mfg_date:     l.mfg_date     || null,
         })),
       };
       const res = await receiptsApi.create(body);
-      const { id, doc_number } = res.data.data;
-
-      if (confirmAfter) {
-        await receiptsApi.confirm(id, {});
-        toast.success(`✅ ${doc_number} dikonfirmasi — stok bertambah!`);
-      } else {
-        toast.success(`📄 ${doc_number} disimpan sebagai draft`);
-      }
+      toast.success(res.data.message);
 
       setShowCreate(false);
+      setIsMaximized(false);
       setForm({ warehouse_id: '', supplier_name: '', receipt_date: today(), notes: '' });
       setLines([newLine()]);
       fetchData();
@@ -98,6 +102,7 @@ export default function ReceiptsModule() {
       toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
     } finally { setSaving(false); }
   };
+
 
   /* ── Confirm existing draft ─────────── */
   const handleConfirm = async (id: string, doc: string) => {

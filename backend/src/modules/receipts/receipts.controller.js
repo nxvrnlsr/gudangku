@@ -81,59 +81,152 @@ const getById = async (req, res) => {
   }
 };
 
-/** POST /api/receipts — Buat dokumen penerimaan baru (status: draft) */
+/** POST /api/receipts — Buat dokumen penerimaan baru */
 const create = async (req, res) => {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
-    const { warehouse_id, supplier_id, receipt_date, notes, lines } = req.body;
+    const {
+      warehouse_id, supplier_id, supplier_name,
+      receipt_date, notes, lines, confirm_immediately,
+    } = req.body;
 
     if (!warehouse_id || !lines || lines.length === 0) {
       return res.status(400).json({ status: 'error', message: 'Gudang dan minimal 1 baris barang wajib diisi.' });
     }
 
-    // Validasi setiap baris
-    for (const line of lines) {
-      if (!line.item_id || !line.unit_id || !line.qty || line.qty <= 0) {
-        return res.status(400).json({ status: 'error', message: 'Setiap baris harus memiliki barang, satuan, dan qty > 0.' });
-      }
-      if (!line.batch_number || !line.expiry_date) {
-        return res.status(400).json({ status: 'error', message: 'No. Batch dan Tanggal Expire wajib diisi untuk setiap baris.' });
-      }
+    // ── Resolve supplier_id dari nama jika perlu ─────────────
+    let resolvedSupplierId = supplier_id || null;
+    if (!resolvedSupplierId && supplier_name && supplier_name.trim()) {
+      const sRes = await client.query(
+        `SELECT id FROM suppliers WHERE name ILIKE $1 LIMIT 1`, [supplier_name.trim()]
+      );
+      resolvedSupplierId = sRes.rows[0]?.id || null;
     }
 
-    const docNumber = await generateDocNumber(client, 'SR');
+    // ── Proses dan validasi setiap baris ─────────────────────
+    const processedLines = [];
+    for (const line of lines) {
+      const itemId    = line.item_id;
+      const qty       = parseFloat(line.qty ?? line.qty_received ?? 0);
+      const costPrice = parseFloat(line.cost_price ?? line.unit_cost ?? 0);
 
-    // Insert header
+      if (!itemId || qty <= 0) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Setiap baris harus memiliki barang dan qty > 0.',
+        });
+      }
+
+      // Auto-resolve unit_id dari base_unit_id item
+      let unitId = line.unit_id || null;
+      if (!unitId) {
+        const itemRes = await client.query(
+          `SELECT base_unit_id FROM items WHERE id = $1`, [itemId]
+        );
+        if (itemRes.rows.length === 0) {
+          throw new Error(`Item dengan id ${itemId} tidak ditemukan.`);
+        }
+        unitId = itemRes.rows[0].base_unit_id;
+      }
+
+      processedLines.push({
+        item_id:      itemId,
+        unit_id:      unitId,
+        qty,
+        cost_price:   costPrice,
+        batch_number: line.batch_number || null,
+        expiry_date:  line.expiry_date  || null,
+        mfg_date:     line.mfg_date     || null,
+      });
+    }
+
+    // ── Buat header dokumen ───────────────────────────────────
+    const docNumber = await generateDocNumber(client, 'SR');
     const headerResult = await client.query(`
-      INSERT INTO stock_receipts (doc_number, warehouse_id, supplier_id, received_by, receipt_date, notes)
+      INSERT INTO stock_receipts
+        (doc_number, warehouse_id, supplier_id, received_by, receipt_date, notes)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [docNumber, warehouse_id, supplier_id || null, req.user.id,
-        receipt_date || new Date().toISOString().split('T')[0], notes]);
-
+    `, [
+      docNumber, warehouse_id, resolvedSupplierId,
+      req.user.id,
+      receipt_date || new Date().toISOString().split('T')[0],
+      notes || null,
+    ]);
     const receipt = headerResult.rows[0];
 
-    // Insert baris-baris
-    for (const line of lines) {
-      await client.query(`
+    // ── Insert baris ──────────────────────────────────────────
+    const lineResults = [];
+    for (const line of processedLines) {
+      const lr = await client.query(`
         INSERT INTO stock_receipt_lines
-          (receipt_id, item_id, unit_id, qty, cost_price, location_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `, [receipt.id, line.item_id, line.unit_id, line.qty,
-          line.cost_price || 0, line.location_id || null]);
+          (receipt_id, item_id, unit_id, qty, cost_price)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+      `, [receipt.id, line.item_id, line.unit_id, line.qty, line.cost_price]);
+      lineResults.push({ ...line, id: lr.rows[0].id });
+    }
+
+    // ── Jika confirm_immediately: buat batch + update stok ───
+    if (confirm_immediately) {
+      for (const line of lineResults) {
+        // Validasi batch jika langsung konfirmasi
+        if (!line.batch_number || !line.expiry_date) {
+          throw new Error(`No. Batch dan Tanggal Kadaluarsa wajib diisi untuk setiap baris saat konfirmasi langsung.`);
+        }
+
+        const batchResult = await client.query(`
+          INSERT INTO batches
+            (receipt_line_id, item_id, warehouse_id, batch_number,
+             manufacture_date, expiry_date, initial_qty, remaining_qty, cost_price)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)
+          ON CONFLICT (batch_number, item_id, warehouse_id)
+          DO UPDATE SET remaining_qty = batches.remaining_qty + $7, updated_at = NOW()
+          RETURNING id
+        `, [
+          line.id, line.item_id, warehouse_id,
+          line.batch_number, line.mfg_date || null,
+          line.expiry_date, line.qty, line.cost_price,
+        ]);
+
+        await postStockMovement(client, {
+          item_id:          line.item_id,
+          warehouse_id:     warehouse_id,
+          batch_id:         batchResult.rows[0].id,
+          qty_in:           line.qty,
+          cost_price:       line.cost_price,
+          transaction_type: 'receipt',
+          reference_id:     receipt.id,
+          reference_type:   'stock_receipts',
+          created_by:       req.user.id,
+        });
+      }
+
+      await client.query(
+        `UPDATE stock_receipts SET status = 'confirmed', approved_by = $1, updated_at = NOW() WHERE id = $2`,
+        [req.user.id, receipt.id]
+      );
     }
 
     await client.query('COMMIT');
-    return res.status(201).json({ status: 'success', message: `Dokumen ${docNumber} berhasil dibuat.`, data: receipt });
+    return res.status(201).json({
+      status: 'success',
+      message: confirm_immediately
+        ? `✅ Penerimaan ${docNumber} dikonfirmasi. Stok berhasil diperbarui.`
+        : `📄 Dokumen ${docNumber} berhasil disimpan sebagai draft.`,
+      data: { ...receipt, status: confirm_immediately ? 'confirmed' : 'draft' },
+    });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Receipt create error:', err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: err.message || 'Terjadi kesalahan server.' });
   } finally {
     client.release();
   }
 };
+
+
 
 /**
  * POST /api/receipts/:id/confirm — KONFIRMASI penerimaan
