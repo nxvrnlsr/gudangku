@@ -1,66 +1,146 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth.store';
+import toast from 'react-hot-toast';
 
-export default function Home() {
+export default function LoginPage() {
+  const [email, setEmail]       = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const { login, isLoading, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace('/dashboard');
+  }, [isAuthenticated, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await login(email, password);
+      toast.success('Selamat datang kembali!');
+      router.replace('/dashboard');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Login gagal';
+      toast.error(msg);
+    }
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'radial-gradient(ellipse at 20% 50%, #0D1F3C 0%, #070B14 50%, #0A0E1A 100%)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Background decorative blobs */}
+      <div style={{
+        position: 'absolute', width: 500, height: 500, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)',
+        top: '-100px', left: '-100px', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', width: 400, height: 400, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
+        bottom: '-80px', right: '-80px', pointerEvents: 'none',
+      }} />
+
+      {/* Glassmorphism Card */}
+      <div style={{
+        width: '100%',
+        maxWidth: 400,
+        padding: '40px',
+        background: 'rgba(14, 21, 37, 0.75)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(59, 130, 246, 0.18)',
+        borderRadius: 24,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
+        position: 'relative',
+        zIndex: 1,
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 52, height: 52,
+            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+            borderRadius: 14,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, margin: '0 auto 16px',
+            boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
+          }}>🏭</div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>
+            Gudang<span style={{ color: '#3B82F6' }}>Ku</span>
+          </h1>
+          <p style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: 6 }}>
+            Sistem Manajemen Stok Gudang
           </p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              className="form-input"
+              placeholder="admin@gudangku.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoFocus
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">Password</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="password"
+                type={showPass ? 'text' : 'password'}
+                className="form-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                style={{ paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                style={{
+                  position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 16,
+                }}
+              >
+                {showPass ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg w-full"
+            disabled={isLoading}
+            style={{ marginTop: 8, justifyContent: 'center' }}
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            {isLoading ? (
+              <><span className="spinner" style={{ width: 16, height: 16 }} /> Memproses...</>
+            ) : (
+              'Masuk →'
+            )}
+          </button>
+        </form>
+
+        <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#334155', marginTop: 24 }}>
+          GudangKu v1.0 • Sistem terlindungi
+        </p>
+      </div>
     </div>
   );
 }
