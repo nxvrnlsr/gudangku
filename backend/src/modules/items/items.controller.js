@@ -30,6 +30,7 @@ const getAll = async (req, res) => {
         SELECT
           i.id, i.name, i.sku, i.barcode, i.shelf_life_days,
           i.min_stock_qty, i.max_stock_qty, i.cost_price, i.is_active,
+          i.base_unit_id,
           c.name AS category_name, c.code AS category_code,
           u.name AS unit_name, u.symbol AS unit_symbol
         FROM items i
