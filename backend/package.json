@@ -1,0 +1,14 @@
+{
+  "name": "gudangku-backend",
+  "version": "1.0.0",
+  "description": "GudangKu API Server - Sistem Manajemen Stok Gudang",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "keywords": ["warehouse", "inventory", "gudang"],
+  "author": "GudangKu",
+  "license": "ISC"
+}
