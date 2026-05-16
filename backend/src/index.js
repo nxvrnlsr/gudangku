@@ -25,16 +25,16 @@ app.get('/', (req, res) => {
   });
 });
 
-// ─── API Routes (akan ditambahkan satu per satu) ──
-// app.use('/api/auth',       require('./modules/auth/auth.routes'));
-// app.use('/api/items',      require('./modules/items/items.routes'));
-// app.use('/api/warehouses', require('./modules/warehouses/warehouses.routes'));
-// app.use('/api/receipts',   require('./modules/receipts/receipts.routes'));
-// app.use('/api/issues',     require('./modules/issues/issues.routes'));
-// app.use('/api/transfers',  require('./modules/transfers/transfers.routes'));
-// app.use('/api/batches',    require('./modules/batches/batches.routes'));
-// app.use('/api/opname',     require('./modules/opname/opname.routes'));
-// app.use('/api/reports',    require('./modules/reports/reports.routes'));
+// ─── API Routes ────────────────────────────────
+app.use('/api/auth',       require('./modules/auth/auth.routes'));
+app.use('/api/items',      require('./modules/items/items.routes'));
+app.use('/api/warehouses', require('./modules/warehouses/warehouses.routes'));
+app.use('/api/batches',    require('./modules/batches/batches.routes'));
+// app.use('/api/receipts',   require('./modules/receipts/receipts.routes'));   // coming soon
+// app.use('/api/issues',     require('./modules/issues/issues.routes'));        // coming soon
+// app.use('/api/transfers',  require('./modules/transfers/transfers.routes'));  // coming soon
+// app.use('/api/opname',     require('./modules/opname/opname.routes'));        // coming soon
+// app.use('/api/reports',    require('./modules/reports/reports.routes'));      // coming soon
 
 // ─── 404 Handler ───────────────────────────────
 app.use((req, res) => {
