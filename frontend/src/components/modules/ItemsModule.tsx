@@ -146,15 +146,18 @@ export default function ItemsModule() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Shelf Life (Hari)</label>
-                    <input className="form-input" type="number" value={form.shelf_life_days} onChange={e => setForm(f => ({...f, shelf_life_days: e.target.value}))} placeholder="365" />
+                    <input className="form-input" type="number" min="0" step="1" placeholder="365"
+                      value={form.shelf_life_days} onChange={e => setForm(f => ({ ...f, shelf_life_days: e.target.value }))} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Stok Minimum</label>
-                    <input className="form-input" type="number" value={form.min_stock_qty} onChange={e => setForm(f => ({...f, min_stock_qty: e.target.value}))} />
+                    <input className="form-input" type="number" min="0" step="1"
+                      value={form.min_stock_qty} onChange={e => setForm(f => ({ ...f, min_stock_qty: e.target.value }))} />
                   </div>
                   <div className="form-group" style={{ gridColumn: '1/-1' }}>
                     <label className="form-label">HPP Awal (Rp)</label>
-                    <input className="form-input" type="number" value={form.cost_price} onChange={e => setForm(f => ({...f, cost_price: e.target.value}))} />
+                    <input className="form-input" type="number" min="0" step="1000"
+                      value={form.cost_price} onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))} />
                   </div>
                 </div>
               </div>

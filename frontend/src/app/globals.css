@@ -6,32 +6,32 @@
    ============================================================ */
 
 :root {
-  /* ── Color Palette ──────────────────────────────────────── */
-  --bg-base:       #070B14;   /* halaman utama */
-  --bg-surface:    #0E1525;   /* card, panel */
-  --bg-elevated:   #162033;   /* dropdown, modal */
-  --bg-hover:      #1D2A40;   /* hover state */
-  --bg-active:     #233148;   /* active/selected */
+  /* ── Color Palette — Dark (default) ─────────────────────── */
+  --bg-base:       #212121;
+  --bg-surface:    #2a2a2a;
+  --bg-elevated:   #333333;
+  --bg-hover:      #3a3a3a;
+  --bg-active:     #424242;
 
-  --border:        #1F2D45;
-  --border-bright: #2D4060;
+  --border:        #383838;
+  --border-bright: #4a4a4a;
 
-  --primary:       #3B82F6;   /* biru utama */
+  --primary:       #3B82F6;
   --primary-hover: #2563EB;
   --primary-glow:  rgba(59, 130, 246, 0.2);
 
   --success:       #10B981;
-  --success-bg:    rgba(16, 185, 129, 0.1);
+  --success-bg:    rgba(16, 185, 129, 0.12);
   --warning:       #F59E0B;
-  --warning-bg:    rgba(245, 158, 11, 0.1);
+  --warning-bg:    rgba(245, 158, 11, 0.12);
   --danger:        #EF4444;
-  --danger-bg:     rgba(239, 68, 68, 0.1);
+  --danger-bg:     rgba(239, 68, 68, 0.12);
   --info:          #06B6D4;
-  --info-bg:       rgba(6, 182, 212, 0.1);
+  --info-bg:       rgba(6, 182, 212, 0.12);
 
   --text-primary:  #F1F5F9;
   --text-secondary:#94A3B8;
-  --text-muted:    #475569;
+  --text-muted:    #666666;
 
   /* ── Typography ─────────────────────────────────────────── */
   --font:          'Inter', -apple-system, sans-serif;
@@ -55,15 +55,44 @@
   --r-full: 999px;
 
   /* ── Shadow ──────────────────────────────────────────────── */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.6);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.7);
   --glow-blue:  0 0 20px rgba(59,130,246,0.25);
 
   /* ── Layout ──────────────────────────────────────────────── */
   --tab-bar-h:   44px;
-  --sidebar-w:   0px; /* no sidebar */
+  --sidebar-w:   0px;
 }
+
+/* ── Light Theme ─────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-base:       #e8e8e8;
+  --bg-surface:    #f2f2f2;
+  --bg-elevated:   #ffffff;
+  --bg-hover:      #e2e2e2;
+  --bg-active:     #d8d8d8;
+
+  --border:        #d0d0d0;
+  --border-bright: #bbbbbb;
+
+  --primary-glow:  rgba(59, 130, 246, 0.15);
+
+  --success-bg:    rgba(16, 185, 129, 0.1);
+  --warning-bg:    rgba(245, 158, 11, 0.1);
+  --danger-bg:     rgba(239, 68, 68, 0.1);
+  --info-bg:       rgba(6, 182, 212, 0.1);
+
+  --text-primary:  #1a1a1a;
+  --text-secondary:#555555;
+  --text-muted:    #888888;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.15);
+  --glow-blue:  0 0 20px rgba(59,130,246,0.2);
+}
+
 
 /* ── Reset ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -221,6 +250,9 @@ button { cursor: pointer; font-family: var(--font); }
 }
 .form-input::placeholder { color: var(--text-muted); }
 .form-input[type="number"] { -moz-appearance: textfield; }
+.form-input[type="number"]::-webkit-inner-spin-button,
+.form-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
 
 select.form-input { cursor: pointer; }
 option { background: var(--bg-elevated); }

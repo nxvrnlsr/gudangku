@@ -273,17 +273,11 @@ export default function ReceiptsModule() {
                         }}
                       />
                       {/* Qty */}
-                      <input className="form-input" type="number" min="0.01" step="0.01" placeholder="1"
-                        value={line.qty_received}
-                        onChange={e => updateLine(idx, 'qty_received', e.target.value)}
-                        style={{ textAlign: 'right' }}
-                      />
+                      <input className="form-input" type="number" min="0.01" step="1" placeholder="1"
+                        value={line.qty_received} onChange={e => updateLine(idx, 'qty_received', e.target.value)} />
                       {/* Unit Cost */}
-                      <input className="form-input" type="number" min="0" step="1" placeholder="Rp/unit"
-                        value={line.unit_cost}
-                        onChange={e => updateLine(idx, 'unit_cost', e.target.value)}
-                        style={{ textAlign: 'right' }}
-                      />
+                      <input className="form-input" type="number" min="0" step="1000" placeholder="Rp/unit"
+                        value={line.unit_cost} onChange={e => updateLine(idx, 'unit_cost', e.target.value)} />
                       {/* Batch */}
                       <input className="form-input" placeholder="BT-2024-001"
                         value={line.batch_number}

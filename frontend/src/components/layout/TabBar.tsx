@@ -9,6 +9,7 @@ import {
   IconUser, IconLogout, IconClose,
 } from '@/components/ui/Icons';
 import type { TabId } from '@/stores/tabs.store';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 // Map tab id ke ikon komponen
 const TAB_ICONS: Record<TabId, React.ComponentType<{ size?: number; color?: string }>> = {
@@ -59,8 +60,11 @@ export default function TabBar() {
 
         <div style={{ flex: 1 }} />
 
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* User Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 8 }}>
           {/* Avatar */}
           <div style={{
             width: 32, height: 32,

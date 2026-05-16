@@ -259,9 +259,8 @@ export default function IssuesModule() {
                         else { setLines(ls => ls.map((l, i) => i === idx ? newLine() : l)); }
                       }} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <input className="form-input" type="number" min="0.01" step="0.01" placeholder="1"
-                          value={line.qty_requested} onChange={e => updateLine(idx, 'qty_requested', e.target.value)}
-                          style={{ textAlign: 'right' }} />
+                        <input className="form-input" type="number" min="0.01" step="1" placeholder="1"
+                          value={line.qty_requested} onChange={e => updateLine(idx, 'qty_requested', e.target.value)} />
                         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{line.unit_symbol}</span>
                       </div>
                       <button type="button" onClick={() => lines.length > 1 && removeLine(idx)}
