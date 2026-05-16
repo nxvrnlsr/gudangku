@@ -61,11 +61,14 @@ export default function TabBar() {
 
       {/* Tab Bar */}
       <div className="tab-bar">
-        {openTabs.map(tab => (
-          <button
+      {openTabs.map(tab => (
+          <div
             key={tab.id}
+            role="button"
+            tabIndex={0}
             className={`tab-item ${activeTabId === tab.id ? 'active' : ''}`}
             onClick={() => setActive(tab.id)}
+            onKeyDown={(e) => e.key === 'Enter' && setActive(tab.id)}
           >
             <span>{tab.icon}</span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{tab.label}</span>
@@ -78,7 +81,7 @@ export default function TabBar() {
                 ×
               </button>
             )}
-          </button>
+          </div>
         ))}
       </div>
     </div>
