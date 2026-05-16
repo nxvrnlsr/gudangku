@@ -12,6 +12,7 @@ import ReceiptsModule    from '@/components/modules/ReceiptsModule';
 import IssuesModule      from '@/components/modules/IssuesModule';
 import TransfersModule   from '@/components/modules/TransfersModule';
 import ReportsModule     from '@/components/modules/ReportsModule';
+import SettingsModule    from '@/components/modules/SettingsModule';
 
 // Map tab ID ke komponen modul
 const MODULE_MAP: Record<TabId, React.ComponentType> = {
@@ -23,7 +24,7 @@ const MODULE_MAP: Record<TabId, React.ComponentType> = {
   issues:     IssuesModule,
   transfers:  TransfersModule,
   reports:    ReportsModule,
-  settings:   () => <div className="page-wrap"><h2 className="page-title">⚙️ Pengaturan</h2><p className="text-secondary">Coming soon</p></div>,
+  settings:   SettingsModule,
 };
 
 export default function DashboardPage() {

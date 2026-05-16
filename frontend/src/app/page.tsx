@@ -84,7 +84,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               className="form-input"
-              placeholder="admin@gudangku.com"
+              placeholder="Masukkan email Anda"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required

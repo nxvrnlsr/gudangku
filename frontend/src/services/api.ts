@@ -98,3 +98,22 @@ export const reportsApi = {
   updateExportPath:  (export_path: string) => api.put('/reports/export-settings', { export_path }),
   openFolder:        (folder_path?: string) => api.post('/reports/open-folder', { folder_path }),
 };
+
+// ── Auth extras ───────────────────────────────────────────────
+export const authApi = {
+  changePassword: (current_password: string, new_password: string) =>
+    api.post('/auth/change-password', { current_password, new_password }),
+};
+
+// ── Users (admin) ─────────────────────────────────────────────
+export const usersApi = {
+  list:          () => api.get('/users'),
+  getRoles:      () => api.get('/users/roles'),
+  create:        (data: { name: string; email: string; password: string; role_ids: string[] }) =>
+    api.post('/users', data),
+  update:        (id: string, data: { name?: string; is_active?: boolean; role_ids?: string[] }) =>
+    api.put(`/users/${id}`, data),
+  resetPassword: (id: string, new_password: string) =>
+    api.put(`/users/${id}/reset-password`, { new_password }),
+};
+

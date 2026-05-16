@@ -266,9 +266,9 @@ button { cursor: pointer; font-family: var(--font); }
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 .form-input::placeholder { color: var(--text-muted); }
-.form-input[type="number"] { -moz-appearance: textfield; }
+.form-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .form-input[type="number"]::-webkit-inner-spin-button,
-.form-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.form-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
 
 
 select.form-input { cursor: pointer; }
