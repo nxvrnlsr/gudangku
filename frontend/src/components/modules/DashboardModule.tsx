@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { reportsApi } from '@/services/api';
 import { useTabsStore, type TabId } from '@/stores/tabs.store';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   IconPackage, IconWarehouse, IconBatch, IconReceipt, IconIssue,
   IconTransfer, IconReport, IconSettings, IconDollar, IconBox, IconClock,
@@ -53,6 +54,10 @@ export default function DashboardModule() {
   const [data, setData]     = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const { openTab }         = useTabsStore();
+  const permissions         = usePermissions();
+
+  // Filter features by what the current user can access
+  const visibleFeatures = FEATURES.filter(f => permissions.allowedTabs.includes(f.id));
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -101,7 +106,8 @@ export default function DashboardModule() {
               <div className="stat-sub">lokasi</div>
             </div>
 
-            {/* Nilai Stok */}
+            {/* Nilai Stok — hanya tampil jika user boleh lihat harga */}
+            {permissions.canViewPrice && (
             <div className="stat-card">
               <div className="stat-icon" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)' }}>
                 <IconDollar size={18} color="#F59E0B" />
@@ -110,6 +116,7 @@ export default function DashboardModule() {
               <div className="stat-value" style={{ fontSize: '1.1rem' }}>{fmtCurrency(data?.total_stock_value ?? 0)}</div>
               <div className="stat-sub">estimasi HPP</div>
             </div>
+            )}
 
             {/* Batch Expiry */}
             <div className="stat-card" style={{
@@ -137,7 +144,7 @@ export default function DashboardModule() {
                 Modul
               </p>
               <div className="launcher-grid">
-                {FEATURES.map(f => (
+                {visibleFeatures.map(f => (
                   <button key={f.id} className="launcher-card" onClick={() => openTab(f.id)} style={{ border: 'none', textAlign: 'left' }}>
                     {/* Icon Container — UIverse-inspired glow effect */}
                     <div style={{

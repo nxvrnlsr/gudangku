@@ -1,6 +1,7 @@
 'use client';
 import { useTabsStore } from '@/stores/tabs.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import {
@@ -11,7 +12,7 @@ import {
 import type { TabId } from '@/stores/tabs.store';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 
-// Map tab id ke ikon komponen
+// ── Tab icon map ───────────────────────────────────────────────
 const TAB_ICONS: Record<TabId, React.ComponentType<{ size?: number; color?: string }>> = {
   dashboard:  IconDashboard,
   items:      IconPackage,
@@ -24,9 +25,26 @@ const TAB_ICONS: Record<TabId, React.ComponentType<{ size?: number; color?: stri
   settings:   IconSettings,
 };
 
+// ── Role display config ────────────────────────────────────────
+const ROLE_COLOR: Record<string, string> = {
+  admin:            '#EF4444',
+  regional_manager: '#F59E0B',
+  kepala_gudang:    '#3B82F6',
+  staff_gudang:     '#10B981',
+  viewer:           '#8B5CF6',
+};
+const ROLE_LABEL: Record<string, string> = {
+  admin:            'Admin',
+  regional_manager: 'Regional Manager',
+  kepala_gudang:    'Kepala Gudang',
+  staff_gudang:     'Staff Gudang',
+  viewer:           'Viewer',
+};
+
 export default function TabBar() {
   const { openTabs, activeTabId, setActive, closeTab, openTab } = useTabsStore();
   const { user, logout } = useAuthStore();
+  const permissions = usePermissions();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -34,6 +52,21 @@ export default function TabBar() {
     toast.success('Berhasil keluar.');
     router.replace('/');
   };
+
+  // Guard: cek permission sebelum buka tab
+  const handleOpenTab = (id: TabId) => {
+    if (!permissions.allowedTabs.includes(id)) {
+      toast.error('Anda tidak memiliki akses ke fitur ini.');
+      return;
+    }
+    openTab(id);
+  };
+  // Make handleOpenTab available globally via store if needed
+  void handleOpenTab;
+
+  const primaryRole = user?.roles?.[0]?.name ?? 'user';
+  const roleColor   = ROLE_COLOR[primaryRole] ?? '#64748B';
+  const roleLabel   = ROLE_LABEL[primaryRole] ?? primaryRole;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
@@ -43,7 +76,6 @@ export default function TabBar() {
           onClick={() => openTab('dashboard')}
           style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 10 }}
         >
-          {/* Logo with glow */}
           <div style={{
             width: 32, height: 32,
             background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
@@ -65,14 +97,14 @@ export default function TabBar() {
 
         {/* User Info */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 8 }}>
-          {/* Avatar */}
+          {/* Avatar with role color */}
           <div style={{
             width: 32, height: 32,
-            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+            background: `linear-gradient(135deg, ${roleColor} 0%, ${roleColor}bb 100%)`,
             borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 13, fontWeight: 700, color: '#fff',
-            boxShadow: '0 0 0 2px var(--border)',
+            boxShadow: `0 0 0 2px var(--border), 0 0 8px ${roleColor}40`,
           }}>
             {user?.name?.[0]?.toUpperCase() ?? <IconUser size={15} color="#fff" />}
           </div>
@@ -81,12 +113,19 @@ export default function TabBar() {
             <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
               {user?.name}
             </div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              {user?.roles?.[0]?.name ?? 'user'}
+            {/* Role badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: '50%',
+                background: roleColor, flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                {roleLabel}
+              </span>
             </div>
           </div>
 
-          {/* Logout Button */}
+          {/* Logout */}
           <button
             className="btn btn-ghost btn-icon"
             onClick={handleLogout}

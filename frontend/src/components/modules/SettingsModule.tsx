@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { authApi, usersApi, reportsApi } from '@/services/api';
 import { useAuthStore } from '@/stores/auth.store';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   IconSettings, IconUser, IconClose, IconPlus, IconCheck,
 } from '@/components/ui/Icons';
@@ -79,7 +80,8 @@ function Modal({ title, onClose, children }: {
 export default function SettingsModule() {
 
   const { user: me } = useAuthStore();
-  const isAdmin = me?.roles?.some((r: { name: string }) => r.name === 'admin') ?? false;
+  const permissions  = usePermissions();
+  const isAdmin      = permissions.canManageUsers;
 
   const [activeTab, setActiveTab] = useState<Tab>('password');
 
