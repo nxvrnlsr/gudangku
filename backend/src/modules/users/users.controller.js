@@ -28,13 +28,27 @@ const getUsers = async (req, res) => {
 };
 
 /**
- * GET /api/users/roles — list semua role yang tersedia
+ * GET /api/users/roles — list semua role yang tersedia (auto-seed jika kosong)
  */
 const getRoles = async (req, res) => {
   try {
-    const result = await db.query('SELECT id, name FROM roles ORDER BY name');
+    let result = await db.query('SELECT id, name FROM roles ORDER BY name');
+
+    // Auto-seed default roles jika tabel kosong
+    if (result.rows.length === 0) {
+      const defaults = ['admin', 'manager', 'staff', 'warehouse', 'viewer'];
+      for (const name of defaults) {
+        await db.query(
+          `INSERT INTO roles (name, permissions) VALUES ($1, '{}') ON CONFLICT (name) DO NOTHING`,
+          [name]
+        );
+      }
+      result = await db.query('SELECT id, name FROM roles ORDER BY name');
+    }
+
     return res.json({ status: 'success', data: result.rows });
   } catch (err) {
+    console.error('getRoles error:', err);
     return res.status(500).json({ status: 'error', message: 'Gagal memuat roles.' });
   }
 };

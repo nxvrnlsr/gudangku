@@ -115,37 +115,53 @@ export default function SettingsModule() {
   const [resetTarget, setResetTarget] = useState<AppUser | null>(null);
   const [resetPw,    setResetPw]    = useState('');
 
+  // Single-select role for new user
   const [newForm, setNewForm] = useState({
-    name: '', email: '', password: '', role_ids: [] as string[],
+    name: '', email: '', password: '', role_id: '',
   });
+
+  const loadRoles = useCallback(async () => {
+    try {
+      const rRes = await usersApi.getRoles();
+      setRoles(rRes.data.data);
+    } catch { /* silently ignore, will show empty */ }
+  }, []);
 
   const loadUsers = useCallback(async () => {
     setULoading(true);
     try {
-      const [uRes, rRes] = await Promise.all([usersApi.list(), usersApi.getRoles()]);
+      const uRes = await usersApi.list();
       setUsers(uRes.data.data);
-      setRoles(rRes.data.data);
     } catch { toast.error('Gagal memuat data pengguna.'); }
     finally { setULoading(false); }
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'users' && isAdmin) loadUsers();
-  }, [activeTab, isAdmin, loadUsers]);
+    if (activeTab === 'users' && isAdmin) {
+      loadRoles();
+      loadUsers();
+    }
+  }, [activeTab, isAdmin, loadUsers, loadRoles]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await usersApi.create(newForm);
+      await usersApi.create({
+        name: newForm.name,
+        email: newForm.email,
+        password: newForm.password,
+        role_ids: newForm.role_id ? [newForm.role_id] : [],
+      });
       toast.success('Pengguna berhasil dibuat!');
       setShowCreate(false);
-      setNewForm({ name: '', email: '', password: '', role_ids: [] });
+      setNewForm({ name: '', email: '', password: '', role_id: '' });
       loadUsers();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg ?? 'Gagal membuat pengguna.');
     }
   };
+
 
   const handleToggleActive = async (u: AppUser) => {
     try {
@@ -378,26 +394,50 @@ export default function SettingsModule() {
                 value={newForm.password} onChange={e => setNewForm(f => ({ ...f, password: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">Role</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                {roles.map(r => {
-                  const selected = newForm.role_ids.includes(r.id);
-                  return (
-                    <button key={r.id} type="button"
-                      className={`btn btn-sm ${selected ? 'btn-primary' : 'btn-secondary'}`}
-                      onClick={() => setNewForm(f => ({
-                        ...f,
-                        role_ids: selected
-                          ? f.role_ids.filter(x => x !== r.id)
-                          : [...f.role_ids, r.id],
-                      }))}
-                    >
-                      {selected && <IconCheck size={11} />} {r.name}
-                    </button>
-                  );
-                })}
-              </div>
+              <label className="form-label">Role <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(pilih satu)</span></label>
+              {roles.length === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                  <span className="spinner" style={{ width: 12, height: 12 }} /> Memuat daftar role...
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
+                  {roles.map(r => {
+                    const selected = newForm.role_id === r.id;
+                    return (
+                      <button key={r.id} type="button"
+                        onClick={() => setNewForm(f => ({ ...f, role_id: r.id }))}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '9px 12px',
+                          background: selected ? 'rgba(59,130,246,0.15)' : 'var(--bg-surface)',
+                          border: `1px solid ${selected ? 'var(--primary)' : 'var(--border)'}`,
+                          borderRadius: 'var(--r-md)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          textAlign: 'left',
+                        }}
+                      >
+                        {/* Radio dot */}
+                        <div style={{
+                          width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                          border: `2px solid ${selected ? 'var(--primary)' : 'var(--border-bright)'}`,
+                          background: selected ? 'var(--primary)' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {selected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                        </div>
+                        <span style={{
+                          fontSize: 'var(--text-sm)', fontWeight: selected ? 600 : 400,
+                          color: selected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                          textTransform: 'capitalize',
+                        }}>{r.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
               <button type="button" className="btn btn-secondary" onClick={() => setShowCreate(false)}>Batal</button>
               <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
