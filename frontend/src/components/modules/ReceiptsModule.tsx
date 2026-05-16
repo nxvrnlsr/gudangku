@@ -121,7 +121,7 @@ export default function ReceiptsModule() {
       {/* ── Header ─────────────────────────────────────── */}
       <div className="page-header">
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconReceipt size={20} color="var(--info)" /> Penerimaan Barang
+          <IconReceipt size={20} color="var(--icon-info)" /> Penerimaan Barang
         </h1>
         <div className="filter-bar">
           <select className="form-input" style={{ width: 160 }} value={filterStatus} onChange={e => setFilter(e.target.value)}>
@@ -141,7 +141,7 @@ export default function ReceiptsModule() {
 
       {/* Info banner */}
       <div style={{ padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <IconInfo size={15} color="var(--primary)" />
+        <IconInfo size={15} color="var(--icon-primary)" />
         <span><strong style={{ color: 'var(--primary)' }}>Alur:</strong> Buat Penerimaan → Isi barang & batch → <strong>Simpan & Konfirmasi</strong> → Stok otomatis bertambah (AVCO)</span>
       </div>
 
@@ -151,7 +151,7 @@ export default function ReceiptsModule() {
           {loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : receipts.length === 0 ? (
-            <div className="empty-state"><IconReceipt size={40} color="var(--text-muted)" /><p>Belum ada penerimaan barang</p><button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconPlus size={13} /> Buat Sekarang</button></div>
+            <div className="empty-state"><IconReceipt size={40} color="var(--icon-muted)" /><p>Belum ada penerimaan barang</p><button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><IconPlus size={13} /> Buat Sekarang</button></div>
           ) : (
             <table className="data-table">
               <thead><tr>

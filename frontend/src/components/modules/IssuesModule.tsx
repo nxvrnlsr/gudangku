@@ -146,7 +146,7 @@ export default function IssuesModule() {
             <div className="loading-center"><div className="spinner" /></div>
           ) : issues.length === 0 ? (
             <div className="empty-state">
-              <IconIssue size={40} color="var(--text-muted)" /><p>Belum ada pengeluaran barang</p>
+              <IconIssue size={40} color="var(--icon-muted)" /><p>Belum ada pengeluaran barang</p>
               <button className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#7C3AED', borderColor: '#7C3AED' }} onClick={() => setShowCreate(true)}>
                 <IconPlus size={13} /> Buat Sekarang
               </button>

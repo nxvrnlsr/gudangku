@@ -172,13 +172,13 @@ export default function DashboardModule() {
                 alignItems: 'center',
                 gap: 8,
               }}>
-                <IconClock size={14} color="var(--text-muted)" />
+                <IconClock size={14} color="var(--icon-muted)" />
                 Transaksi Terakhir
               </div>
               <div style={{ overflowY: 'auto', flex: 1 }}>
                 {(data?.recent_transactions ?? []).length === 0 ? (
                   <div className="empty-state">
-                    <IconBox size={36} color="var(--text-muted)" />
+                    <IconBox size={36} color="var(--icon-muted)" />
                     <p>Belum ada transaksi</p>
                   </div>
                 ) : (

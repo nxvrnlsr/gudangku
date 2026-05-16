@@ -54,11 +54,11 @@ export default function ItemsModule() {
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconPackage size={20} color="var(--primary)" /> Master Barang
+          <IconPackage size={20} color="var(--icon-primary)" /> Master Barang
         </h1>
         <div className="filter-bar">
           <div className="search-bar">
-            <IconSearch size={14} color="var(--text-muted)" />
+            <IconSearch size={14} color="var(--icon-muted)" />
             <input placeholder="Cari nama, SKU, barcode..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
           <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -72,7 +72,7 @@ export default function ItemsModule() {
           {loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : items.length === 0 ? (
-            <div className="empty-state"><IconPackage size={40} color="var(--text-muted)" /><p>Tidak ada barang</p></div>
+            <div className="empty-state"><IconPackage size={40} color="var(--icon-muted)" /><p>Tidak ada barang</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>

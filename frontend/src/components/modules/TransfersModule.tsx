@@ -120,7 +120,7 @@ export default function TransfersModule() {
             <div className="loading-center"><div className="spinner" /></div>
           ) : transfers.length === 0 ? (
             <div className="empty-state">
-              <IconTransfer size={40} color="var(--text-muted)" /><p>Belum ada transfer</p>
+              <IconTransfer size={40} color="var(--icon-muted)" /><p>Belum ada transfer</p>
               <button className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setShowCreate(true)}><IconPlus size={13} /> Buat Transfer</button>
             </div>
           ) : (

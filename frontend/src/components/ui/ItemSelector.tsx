@@ -72,7 +72,7 @@ export default function ItemSelector({ value, onChange, placeholder = 'Cari atau
       >
         {selected ? (
           <>
-            <IconPackage size={13} color="var(--primary)" />
+            <IconPackage size={13} color="var(--icon-primary)" />
             <span style={{ flex: 1, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
               <strong>{selected.name}</strong>
               <span style={{ color: 'var(--text-muted)', marginLeft: 6, fontSize: 'var(--text-xs)' }}>
@@ -87,7 +87,7 @@ export default function ItemSelector({ value, onChange, placeholder = 'Cari atau
           </>
         ) : (
           <>
-            <IconSearch size={13} color="var(--text-muted)" />
+            <IconSearch size={13} color="var(--icon-muted)" />
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{placeholder}</span>
           </>
         )}
@@ -104,7 +104,7 @@ export default function ItemSelector({ value, onChange, placeholder = 'Cari atau
           {/* Search input dalam dropdown */}
           <div style={{ padding: '8px', borderBottom: '1px solid var(--border)' }}>
             <div className="search-bar" style={{ width: '100%' }}>
-              <IconSearch size={13} color="var(--text-muted)" />
+              <IconSearch size={13} color="var(--icon-muted)" />
               <input
                 autoFocus
                 placeholder="Ketik nama atau SKU..."
@@ -140,7 +140,7 @@ export default function ItemSelector({ value, onChange, placeholder = 'Cari atau
                 onMouseLeave={e => (e.currentTarget.style.background = item.id === value ? 'var(--bg-active)' : 'transparent')}
               >
                 <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(59,130,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <IconPackage size={13} color="var(--primary)" />
+                  <IconPackage size={13} color="var(--icon-primary)" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 500, fontSize: 'var(--text-sm)', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { reportsApi } from '@/services/api';
-import { IconReport, IconDownload, IconFolder, IconRefresh, IconInfo } from '@/components/ui/Icons';
+import { IconReport, IconDownload, IconFolder, IconRefresh, IconInfo, IconClose } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
 interface StockRow  { SKU: string; 'Nama Barang': string; Kategori: string; Satuan: string; Gudang: string; 'Qty On Hand': number; 'Nilai Stok (Rp)': number; Status: string; }
@@ -53,7 +53,7 @@ export default function ReportsModule() {
     <div className="page-wrap">
       <div className="page-header">
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconReport size={20} color="var(--info)" /> Laporan
+          <IconReport size={20} color="var(--icon-info)" /> Laporan
         </h1>
         {exportedPath && (
           <button className="btn btn-secondary btn-sm" onClick={openFolder} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -90,7 +90,7 @@ export default function ReportsModule() {
           <div className="panel" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div className="table-wrap" style={{ flex: 1, overflow: 'auto', border: 'none', borderRadius: 0 }}>
               {stockData.length === 0 ? (
-                <div className="empty-state"><IconReport size={40} color="var(--text-muted)" /><p>Klik &quot;Tampilkan&quot; untuk memuat laporan</p></div>
+                <div className="empty-state"><IconReport size={40} color="var(--icon-muted)" /><p>Klik &quot;Tampilkan&quot; untuk memuat laporan</p></div>
               ) : (
                 <table className="data-table">
                   <thead><tr>{Object.keys(stockData[0]).map(k => <th key={k}>{k}</th>)}</tr></thead>
@@ -133,7 +133,7 @@ export default function ReportsModule() {
           <div className="panel" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div className="table-wrap" style={{ flex: 1, overflow: 'auto', border: 'none', borderRadius: 0 }}>
               {expiryData.length === 0 ? (
-                <div className="empty-state"><IconReport size={40} color="var(--text-muted)" /><p>Klik &quot;Tampilkan&quot; untuk memuat laporan</p></div>
+                <div className="empty-state"><IconReport size={40} color="var(--icon-muted)" /><p>Klik &quot;Tampilkan&quot; untuk memuat laporan</p></div>
               ) : (
                 <table className="data-table">
                   <thead><tr>{Object.keys(expiryData[0]).map(k => <th key={k}>{k}</th>)}</tr></thead>
@@ -158,7 +158,7 @@ export default function ReportsModule() {
       {activeReport === 'card' && (
         <div className="card" style={{ flex: 1 }}>
           <div className="empty-state">
-            <IconReport size={40} color="var(--text-muted)" />
+            <IconReport size={40} color="var(--icon-muted)" />
             <p>Pilih barang dan gudang untuk melihat kartu stok</p>
             <p className="text-xs">Coming soon — akan ditambahkan pada update berikutnya</p>
           </div>
@@ -167,16 +167,58 @@ export default function ReportsModule() {
 
       {/* Export result banner */}
       {exportedPath && (
-        <div style={{ padding: '10px 14px', background: 'var(--success-bg)', borderRadius: 'var(--r-md)', border: '1px solid rgba(16,185,129,0.3)', fontSize: 'var(--text-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <IconInfo size={14} color="var(--success)" />
-            <span>File tersimpan di: <code style={{ color: 'var(--success)', fontSize: 11 }}>{exportedPath}</code></span>
+        <div style={{
+          padding: '10px 14px',
+          background: 'var(--success-bg)',
+          borderRadius: 'var(--r-md)',
+          border: '1px solid rgba(16,185,129,0.3)',
+          fontSize: 'var(--text-sm)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 0,
+          gap: 12,
+        }}>
+          {/* Left — info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+            <IconInfo size={14} color="var(--icon-success)" style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              File tersimpan di: <code style={{ color: 'var(--success)', fontSize: 11 }}>{exportedPath}</code>
+            </span>
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={openFolder} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <IconFolder size={13} /> Buka Folder
-          </button>
+
+          {/* Right — actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={openFolder}
+              style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+            >
+              <IconFolder size={13} /> Buka Folder
+            </button>
+            <button
+              onClick={() => setExportedPath('')}
+              title="Tutup notifikasi"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 26, height: 26,
+                background: 'transparent',
+                border: '1px solid rgba(16,185,129,0.3)',
+                borderRadius: 'var(--r-sm)',
+                color: 'var(--success)',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                flexShrink: 0,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(16,185,129,0.15)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <IconClose size={12} />
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
+

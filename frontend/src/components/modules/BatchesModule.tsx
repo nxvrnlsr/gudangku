@@ -40,7 +40,7 @@ export default function BatchesModule() {
     <div className="page-wrap">
       <div className="page-header">
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconBatch size={20} color="var(--warning)" /> Monitor Batch & Expiry
+          <IconBatch size={20} color="var(--icon-warning)" /> Monitor Batch & Expiry
         </h1>
         <button className="btn btn-secondary btn-sm" onClick={fetchData} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <IconRefresh size={13} /> Refresh
@@ -78,7 +78,7 @@ export default function BatchesModule() {
           {loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : batches.length === 0 ? (
-            <div className="empty-state"><IconBatch size={40} color="var(--text-muted)" /><p>Tidak ada batch untuk filter ini</p></div>
+            <div className="empty-state"><IconBatch size={40} color="var(--icon-muted)" /><p>Tidak ada batch untuk filter ini</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>

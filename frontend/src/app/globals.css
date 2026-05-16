@@ -20,6 +20,14 @@
   --primary-hover: #2563EB;
   --primary-glow:  rgba(59, 130, 246, 0.2);
 
+  /* ── Icon Colors — dark mode (brighter for visibility) ─── */
+  --icon-primary:  #60A5FA;   /* lighter blue */
+  --icon-info:     #22D3EE;   /* lighter cyan */
+  --icon-success:  #34D399;   /* lighter green */
+  --icon-warning:  #FCD34D;   /* lighter amber */
+  --icon-danger:   #F87171;   /* lighter red */
+  --icon-muted:    #9CA3AF;   /* medium grey */
+
   --success:       #10B981;
   --success-bg:    rgba(16, 185, 129, 0.12);
   --warning:       #F59E0B;
@@ -91,7 +99,16 @@
   --shadow-md:  0 4px 16px rgba(0,0,0,0.1);
   --shadow-lg:  0 8px 32px rgba(0,0,0,0.15);
   --glow-blue:  0 0 20px rgba(59,130,246,0.2);
+
+  /* ── Icon Colors — light mode (deeper for contrast on white/grey bg) */
+  --icon-primary:  #1D4ED8;   /* deep blue */
+  --icon-info:     #0E7490;   /* deep teal */
+  --icon-success:  #047857;   /* deep green */
+  --icon-warning:  #92400E;   /* deep amber */
+  --icon-danger:   #B91C1C;   /* deep red */
+  --icon-muted:    #6B7280;   /* medium grey */
 }
+
 
 
 /* ── Reset ────────────────────────────────────────────────── */

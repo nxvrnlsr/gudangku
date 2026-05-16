@@ -47,13 +47,13 @@ export default function WarehousesModule() {
       <div className="page-header">
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <IconWarehouse size={20} color="var(--success)" /> Gudang & Posisi Stok
+            <IconWarehouse size={20} color="var(--icon-success)" /> Gudang & Posisi Stok
           </h1>
           {selectedWarehouse && <p className="text-secondary text-sm">{selectedWarehouse.name} — {selectedWarehouse.city_name}</p>}
         </div>
         <div className="filter-bar">
           <div className="search-bar">
-            <IconSearch size={14} color="var(--text-muted)" />
+            <IconSearch size={14} color="var(--icon-muted)" />
             <input placeholder="Cari barang..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function WarehousesModule() {
           {loadingStock ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : filtered.length === 0 ? (
-            <div className="empty-state"><IconWarehouse size={40} color="var(--text-muted)" /><p>Tidak ada stok di gudang ini</p></div>
+            <div className="empty-state"><IconWarehouse size={40} color="var(--icon-muted)" /><p>Tidak ada stok di gudang ini</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>
