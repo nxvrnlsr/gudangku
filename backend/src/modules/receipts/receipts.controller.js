@@ -18,7 +18,7 @@ const getAll = async (req, res) => {
       db.query(`
         SELECT sr.id, sr.doc_number, sr.status, sr.receipt_date, sr.notes,
                w.name AS warehouse_name,
-               s.name AS supplier_name,
+               COALESCE(s.name, sr.supplier_name_text) AS supplier_name,
                u.name AS received_by_name,
                COUNT(srl.id) AS line_count,
                SUM(srl.qty * srl.cost_price) AS total_value
@@ -52,7 +52,7 @@ const getById = async (req, res) => {
     const { id } = req.params;
     const [header, lines] = await Promise.all([
       db.query(`
-        SELECT sr.*, w.name AS warehouse_name, s.name AS supplier_name,
+        SELECT sr.*, w.name AS warehouse_name, COALESCE(s.name, sr.supplier_name_text) AS supplier_name,
                u.name AS received_by_name, a.name AS approved_by_name
         FROM stock_receipts sr
         JOIN warehouses w ON w.id = sr.warehouse_id
@@ -158,15 +158,17 @@ const create = async (req, res) => {
     const docNumber = await generateDocNumber(client, 'SR');
     const headerResult = await client.query(`
       INSERT INTO stock_receipts
-        (doc_number, warehouse_id, supplier_id, received_by, receipt_date, notes)
-      VALUES ($1, $2, $3, $4, $5, $6)
+        (doc_number, warehouse_id, supplier_id, supplier_name_text, received_by, receipt_date, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `, [
       docNumber, warehouse_id, resolvedSupplierId,
+      supplier_name ? supplier_name.trim() : null,
       req.user.id,
       receipt_date || new Date().toISOString().split('T')[0],
       notes || null,
     ]);
+
     const receipt = headerResult.rows[0];
 
     // ── Insert baris ──────────────────────────────────────────

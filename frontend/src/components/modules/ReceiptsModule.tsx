@@ -13,8 +13,13 @@ interface Receipt {
 interface ReceiptDetail {
   id: string; doc_number: string; status: string; receipt_date: string; supplier_name: string;
   notes: string; warehouse_name: string; received_by_name: string;
-  lines: Array<{ item_name: string; sku: string; qty_received: number; unit_cost: number; batch_number: string; expiry_date: string; unit_symbol: string; }>;
+  lines: Array<{
+    item_name: string; sku: string; unit_symbol: string;
+    qty: number; cost_price: number;
+    batch_number: string | null; expiry_date: string | null; manufacture_date: string | null;
+  }>;
 }
+
 interface Warehouse { id: string; name: string; }
 interface LineItem { item_id: string; item_name: string; unit_symbol: string; qty_received: string; unit_cost: string; batch_number: string; expiry_date: string; mfg_date: string; }
 
