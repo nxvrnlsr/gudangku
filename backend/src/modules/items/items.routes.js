@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAll, getById, create, update, getCategories, getUnits } = require('./items.controller');
+const { getAll, getById, create, update, deleteItem, getCategories, getUnits } = require('./items.controller');
 const { authenticate } = require('../../middleware/auth');
 
 // Semua route items butuh login
@@ -12,5 +12,6 @@ router.get('/', getAll);                   // GET /api/items
 router.get('/:id', getById);              // GET /api/items/:id
 router.post('/', create);                  // POST /api/items
 router.put('/:id', update);              // PUT /api/items/:id
+router.delete('/:id', deleteItem);        // DELETE /api/items/:id
 
 module.exports = router;

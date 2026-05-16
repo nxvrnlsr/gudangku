@@ -225,4 +225,37 @@ const getUnits = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, getCategories, getUnits };
+
+/**
+ * DELETE /api/items/:id — Hapus barang (hard delete jika tidak ada stok)
+ */
+const deleteItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Cek apakah ada stok aktif
+    const stockCheck = await db.query(
+      `SELECT COALESCE(SUM(qty_on_hand), 0) AS total_qty FROM stock_balances WHERE item_id = $1`, [id]
+    );
+    const totalQty = parseFloat(stockCheck.rows[0].total_qty);
+    if (totalQty > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Barang tidak bisa dihapus karena masih memiliki stok aktif (${totalQty} unit). Nonaktifkan barang melalui menu Edit.`,
+      });
+    }
+
+    const result = await db.query(`DELETE FROM items WHERE id = $1 RETURNING name`, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Barang tidak ditemukan.' });
+    }
+
+    return res.json({ status: 'success', message: `Barang "${result.rows[0].name}" berhasil dihapus.` });
+  } catch (err) {
+    console.error('Items delete error:', err);
+    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+  }
+};
+
+module.exports = { getAll, getById, create, update, deleteItem, getCategories, getUnits };
+

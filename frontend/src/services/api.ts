@@ -39,13 +39,15 @@ export const authApi = {
 
 // ── Items ───────────────────────────────────────────────────
 export const itemsApi = {
-  getAll:      (params?: object) => api.get('/items', { params }),
-  getById:     (id: string)      => api.get(`/items/${id}`),
-  create:      (data: object)    => api.post('/items', data),
-  update:      (id: string, data: object) => api.put(`/items/${id}`, data),
+  getAll:        (params?: object) => api.get('/items', { params }),
+  getById:       (id: string)      => api.get(`/items/${id}`),
+  create:        (data: object)    => api.post('/items', data),
+  update:        (id: string, data: object) => api.put(`/items/${id}`, data),
+  delete:        (id: string)      => api.delete(`/items/${id}`),
   getCategories: () => api.get('/items/categories'),
-  getUnits:    () => api.get('/items/units'),
+  getUnits:      () => api.get('/items/units'),
 };
+
 
 // ── Warehouses ──────────────────────────────────────────────
 export const warehousesApi = {
