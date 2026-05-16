@@ -41,6 +41,7 @@ export default function IssuesModule() {
   const [detailId,     setDetailId]     = useState<string|null>(null);
   const [detail,       setDetail]       = useState<IssueDetail|null>(null);
   const [saving,       setSaving]       = useState(false);
+  const [isMaximized,  setIsMaximized]  = useState(false);
 
   // Form state
   const [form, setForm] = useState({ warehouse_id: '', issue_date: today(), issue_type: 'delivery', customer_name: '', notes: '' });
@@ -189,14 +190,23 @@ export default function IssuesModule() {
 
       {/* ═══ MODAL: BUAT PENGELUARAN ═══ */}
       {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
-          <div className="modal" style={{ maxWidth: 760 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => { setShowCreate(false); setIsMaximized(false); }}>
+          <div className={`modal${isMaximized ? ' maximized' : ''}`} style={{ maxWidth: isMaximized ? undefined : 760, display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div>
                 <h2 className="modal-title">Buat Pengeluaran Barang</h2>
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>Isi detail barang — batch dipilih otomatis (FEFO) saat konfirmasi</p>
               </div>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowCreate(false)}><IconClose size={16} /></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button className="btn-maximize" onClick={() => setIsMaximized(v => !v)} title={isMaximized ? 'Perkecil' : 'Perbesar'}>
+                  {isMaximized ? (
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+                  ) : (
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                  )}
+                </button>
+                <button className="btn btn-ghost btn-icon" onClick={() => { setShowCreate(false); setIsMaximized(false); }}><IconClose size={16} /></button>
+              </div>
             </div>
             <div className="modal-body" style={{ gap: 20 }}>
               {/* Header */}

@@ -541,6 +541,36 @@ option { background: var(--bg-elevated); }
   border-top: 1px solid var(--border);
 }
 
+/* ── Modal Maximized (fullscreen) variant ────────────────── */
+.modal.maximized {
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  height: calc(100vh - 32px);
+  border-radius: var(--r-lg);
+}
+.modal.maximized .modal-body {
+  flex: 1;
+  overflow-y: auto;
+}
+/* Btn maximize icon */
+.btn-maximize {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: var(--r-md);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-maximize:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-bright);
+}
+
+
 /* ── Dashboard App Launcher ──────────────────────────────── */
 .launcher-grid {
   display: grid;

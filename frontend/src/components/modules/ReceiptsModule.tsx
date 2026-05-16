@@ -34,6 +34,7 @@ export default function ReceiptsModule() {
   const [detailId,     setDetailId]     = useState<string|null>(null);
   const [detail,       setDetail]       = useState<ReceiptDetail|null>(null);
   const [saving,       setSaving]       = useState(false);
+  const [isMaximized,  setIsMaximized]  = useState(false);
 
   // Form state
   const [form, setForm] = useState({ warehouse_id: '', supplier_name: '', receipt_date: today(), notes: '' });
@@ -198,8 +199,8 @@ export default function ReceiptsModule() {
           MODAL: BUAT PENERIMAAN BARANG
       ══════════════════════════════════════════════════ */}
       {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
-          <div className="modal" style={{ maxWidth: 860 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => { setShowCreate(false); setIsMaximized(false); }}>
+          <div className={`modal${isMaximized ? ' maximized' : ''}`} style={{ maxWidth: isMaximized ? undefined : 900, display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div>
                 <h2 className="modal-title">Buat Penerimaan Barang</h2>
@@ -207,7 +208,28 @@ export default function ReceiptsModule() {
                   Isi informasi pengiriman dan detail barang yang diterima
                 </p>
               </div>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowCreate(false)}><IconClose size={16} /></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  className="btn-maximize"
+                  onClick={() => setIsMaximized(v => !v)}
+                  title={isMaximized ? 'Perkecil' : 'Perbesar'}
+                >
+                  {isMaximized ? (
+                    // Restore icon
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                      <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                    </svg>
+                  ) : (
+                    // Maximize icon
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                      <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+                    </svg>
+                  )}
+                </button>
+                <button className="btn btn-ghost btn-icon" onClick={() => { setShowCreate(false); setIsMaximized(false); }}><IconClose size={16} /></button>
+              </div>
             </div>
 
             <div className="modal-body" style={{ gap: 20 }}>
@@ -252,12 +274,12 @@ export default function ReceiptsModule() {
 
                 <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
                   {/* Kolom header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 80px 110px 120px 110px 30px', gap: 8, padding: '8px 14px', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMaximized ? '3fr 90px 130px 140px 130px 36px' : '2.5fr 80px 110px 120px 110px 30px', gap: 8, padding: '8px 14px', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     <span>Barang</span><span>Qty</span><span>Harga Satuan</span><span>No. Batch</span><span>Tgl Kadaluarsa</span><span></span>
                   </div>
 
                   {lines.map((line, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2.5fr 80px 110px 120px 110px 30px', gap: 8, padding: '10px 14px', borderBottom: idx < lines.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'center' }}>
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: isMaximized ? '3fr 90px 130px 140px 130px 36px' : '2.5fr 80px 110px 120px 110px 30px', gap: 8, padding: '10px 14px', borderBottom: idx < lines.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'center' }}>
                       {/* Pilih Barang */}
                       <ItemSelector
                         value={line.item_id}
