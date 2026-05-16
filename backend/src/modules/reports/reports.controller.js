@@ -1,16 +1,5 @@
 const db = require('../../config/database');
-const XLSX = require('xlsx');
-
-/** Helper: kirim file Excel sebagai response */
-const sendExcel = (res, data, sheetName, filename) => {
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.send(buf);
-};
+const { saveExcelFile, getExportConfig, updateExportPath, openFolder } = require('../../utils/export.utils');
 
 /**
  * GET /api/reports/stock-position — Posisi stok semua item per gudang
@@ -52,7 +41,8 @@ const stockPosition = async (req, res) => {
     `, params);
 
     if (doExport === 'excel') {
-      return sendExcel(res, result.rows, 'Posisi Stok', `posisi-stok-${new Date().toISOString().split('T')[0]}.xlsx`);
+      const saved = await saveExcelFile(result.rows, 'Posisi Stok', 'posisi-stok', 'Posisi-Stok', req.query.custom_path);
+      return res.json({ status: 'success', message: 'File berhasil disimpan.', export: saved });
     }
     return res.json({ status: 'success', data: result.rows, total: result.rows.length });
   } catch (err) {
@@ -99,7 +89,8 @@ const expiryReport = async (req, res) => {
     `, params);
 
     if (doExport === 'excel') {
-      return sendExcel(res, result.rows, 'Laporan Expiry', `laporan-expiry-${new Date().toISOString().split('T')[0]}.xlsx`);
+      const saved = await saveExcelFile(result.rows, 'Laporan Kadaluarsa', 'expiry', 'Laporan-Expiry', req.query.custom_path);
+      return res.json({ status: 'success', message: 'File berhasil disimpan.', export: saved });
     }
     return res.json({ status: 'success', data: result.rows, total: result.rows.length });
   } catch (err) {
@@ -141,7 +132,8 @@ const stockCard = async (req, res) => {
     `, params);
 
     if (doExport === 'excel') {
-      return sendExcel(res, result.rows, 'Kartu Stok', `kartu-stok-${new Date().toISOString().split('T')[0]}.xlsx`);
+      const saved = await saveExcelFile(result.rows, 'Kartu Stok', 'kartu-stok', 'Kartu-Stok', req.query.custom_path);
+      return res.json({ status: 'success', message: 'File berhasil disimpan.', export: saved });
     }
     return res.json({ status: 'success', data: result.rows, total: result.rows.length });
   } catch (err) {
@@ -191,4 +183,46 @@ const dashboard = async (req, res) => {
   }
 };
 
-module.exports = { stockPosition, expiryReport, stockCard, dashboard };
+
+/** GET /api/reports/export-settings — Ambil konfigurasi export saat ini */
+const getExportSettings = async (req, res) => {
+  try {
+    const config = await getExportConfig();
+    const result = await db.query(`SELECT key, value, description FROM app_settings ORDER BY key`);
+    return res.json({ status: 'success', data: { config, settings: result.rows } });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+  }
+};
+
+/** PUT /api/reports/export-settings — Update export path */
+const updateExportSettings = async (req, res) => {
+  try {
+    const { export_path } = req.body;
+    if (!export_path) {
+      return res.status(400).json({ status: 'error', message: 'export_path wajib diisi.' });
+    }
+    const newPath = await updateExportPath(export_path, req.user.id);
+    return res.json({ status: 'success', message: `Path export diubah ke: ${newPath}`, data: { path: newPath } });
+  } catch (err) {
+    return res.status(400).json({ status: 'error', message: err.message });
+  }
+};
+
+/** POST /api/reports/open-folder — Buka folder export di Windows Explorer */
+const openExportFolder = async (req, res) => {
+  try {
+    const { folder_path } = req.body;
+    const config = await getExportConfig();
+    const targetPath = folder_path || config.basePath;
+    const opened = openFolder(targetPath);
+    if (!opened) {
+      return res.status(404).json({ status: 'error', message: `Folder tidak ditemukan: ${targetPath}` });
+    }
+    return res.json({ status: 'success', message: 'Folder dibuka di Windows Explorer.' });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+  }
+};
+
+module.exports = { stockPosition, expiryReport, stockCard, dashboard, getExportSettings, updateExportSettings, openExportFolder };
