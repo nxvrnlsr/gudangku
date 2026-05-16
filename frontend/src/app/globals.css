@@ -558,3 +558,25 @@ option { background: var(--bg-elevated); }
   .launcher-grid { grid-template-columns: repeat(2, 1fr); }
   .tab-item { min-width: 100px; }
 }
+
+/* ── Launcher Card — row layout ──────────────────────────── */
+.launcher-card {
+  flex-direction: row !important;
+  align-items: center !important;
+  text-align: left !important;
+  padding: 12px 14px !important;
+  gap: 14px !important;
+}
+.launcher-card:hover { border-color: var(--border-bright); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.launcher-card::before { display: none; }
+
+/* ── Form section label ──────────────────────────────────── */
+.form-section-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
