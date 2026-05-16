@@ -33,7 +33,8 @@ export default api;
 export const authApi = {
   login:          (data: { email: string; password: string }) => api.post('/auth/login', data),
   getMe:          () => api.get('/auth/me'),
-  changePassword: (data: object) => api.post('/auth/change-password', data),
+  changePassword: (current_password: string, new_password: string) =>
+    api.post('/auth/change-password', { current_password, new_password }),
 };
 
 // ── Items ───────────────────────────────────────────────────
@@ -99,11 +100,7 @@ export const reportsApi = {
   openFolder:        (folder_path?: string) => api.post('/reports/open-folder', { folder_path }),
 };
 
-// ── Auth extras ───────────────────────────────────────────────
-export const authApi = {
-  changePassword: (current_password: string, new_password: string) =>
-    api.post('/auth/change-password', { current_password, new_password }),
-};
+
 
 // ── Users (admin) ─────────────────────────────────────────────
 export const usersApi = {

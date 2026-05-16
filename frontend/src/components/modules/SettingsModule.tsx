@@ -53,7 +53,31 @@ const ROLE_CLASS: Record<string, string> = {
 
 type Tab = 'password' | 'users' | 'export';
 
+// ── Modal — defined OUTSIDE SettingsModule to prevent remount on every render ──
+function Modal({ title, onClose, children }: {
+  title: string; onClose: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={onClose}>
+      <div style={{
+        background: 'var(--bg-elevated)', border: '1px solid var(--border-bright)',
+        borderRadius: 'var(--r-lg)', padding: 28, width: 420, boxShadow: 'var(--shadow-lg)',
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{title}</h3>
+          <button className="btn btn-ghost btn-icon" onClick={onClose}><IconClose size={15} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function SettingsModule() {
+
   const { user: me } = useAuthStore();
   const isAdmin = me?.roles?.some((r: { name: string }) => r.name === 'admin') ?? false;
 
@@ -183,27 +207,6 @@ export default function SettingsModule() {
     ...(isAdmin ? [{ id: 'users' as Tab, label: 'Manajemen User', Icon: IconUsers }] : []),
     { id: 'export',   label: 'Path Export',    Icon: IconFolder2 },
   ];
-
-  // ── Modal wrapper ─────────────────────────────────────────
-  const Modal = ({ title, onClose, children }: {
-    title: string; onClose: () => void; children: React.ReactNode;
-  }) => (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }} onClick={onClose}>
-      <div style={{
-        background: 'var(--bg-elevated)', border: '1px solid var(--border-bright)',
-        borderRadius: 'var(--r-lg)', padding: 28, width: 420, boxShadow: 'var(--shadow-lg)',
-      }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{title}</h3>
-          <button className="btn btn-ghost btn-icon" onClick={onClose}><IconClose size={15} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
 
   return (
     <div className="page-wrap">
