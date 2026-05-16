@@ -1,0 +1,21 @@
+{
+  "name": "gudangku",
+  "version": "1.0.0",
+  "description": "Software manajemen dan perhitungan stok gudang untuk distribusi bahan pokok (sembako/FMCG) skala nasional di seluruh Indonesia.",
+  "main": "migrate.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "pg": "^8.20.0"
+  }
+}
