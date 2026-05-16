@@ -380,9 +380,9 @@ export default function ReceiptsModule() {
                     {detail.lines?.map((l, i) => (
                       <tr key={i}>
                         <td><div style={{ fontWeight: 500 }}>{l.item_name}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.sku}</div></td>
-                        <td>{l.qty_received} {l.unit_symbol}</td>
-                        <td>Rp {fmt(l.unit_cost)}</td>
-                        <td style={{ fontWeight: 500 }}>Rp {fmt(l.qty_received * l.unit_cost)}</td>
+                        <td>{l.qty} {l.unit_symbol}</td>
+                        <td>Rp {fmt(Number(l.cost_price) || 0)}</td>
+                        <td style={{ fontWeight: 500 }}>Rp {fmt((Number(l.qty) || 0) * (Number(l.cost_price) || 0))}</td>
                         <td><code style={{ fontSize: 11 }}>{l.batch_number || '—'}</code></td>
                         <td className="text-secondary">{l.expiry_date ? new Date(l.expiry_date).toLocaleDateString('id-ID') : '—'}</td>
                       </tr>

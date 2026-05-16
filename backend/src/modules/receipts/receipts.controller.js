@@ -63,11 +63,11 @@ const getById = async (req, res) => {
       `, [id]),
       db.query(`
         SELECT srl.*, i.name AS item_name, i.sku, un.symbol AS unit_symbol,
-               wl.zone, wl.rack, wl.bin
+               b.batch_number, b.expiry_date, b.manufacture_date
         FROM stock_receipt_lines srl
         JOIN items i ON i.id = srl.item_id
         JOIN units un ON un.id = srl.unit_id
-        LEFT JOIN warehouse_locations wl ON wl.id = srl.location_id
+        LEFT JOIN batches b ON b.receipt_line_id = srl.id
         WHERE srl.receipt_id = $1
         ORDER BY srl.created_at
       `, [id]),
@@ -77,9 +77,11 @@ const getById = async (req, res) => {
 
     return res.json({ status: 'success', data: { ...header.rows[0], lines: lines.rows } });
   } catch (err) {
+    console.error('getById error:', err);
     return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
   }
 };
+
 
 /** POST /api/receipts — Buat dokumen penerimaan baru */
 const create = async (req, res) => {
@@ -98,10 +100,21 @@ const create = async (req, res) => {
     // ── Resolve supplier_id dari nama jika perlu ─────────────
     let resolvedSupplierId = supplier_id || null;
     if (!resolvedSupplierId && supplier_name && supplier_name.trim()) {
+      // Cari dulu, jika tidak ada → buat baru
       const sRes = await client.query(
         `SELECT id FROM suppliers WHERE name ILIKE $1 LIMIT 1`, [supplier_name.trim()]
       );
-      resolvedSupplierId = sRes.rows[0]?.id || null;
+      if (sRes.rows.length > 0) {
+        resolvedSupplierId = sRes.rows[0].id;
+      } else {
+        // Auto-create supplier dengan kode otomatis
+        const autoCode = 'SUP-' + supplier_name.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase().substring(0, 8) + '-' + Date.now().toString().slice(-4);
+        const newS = await client.query(
+          `INSERT INTO suppliers (name, code) VALUES ($1, $2) RETURNING id`,
+          [supplier_name.trim(), autoCode]
+        );
+        resolvedSupplierId = newS.rows[0].id;
+      }
     }
 
     // ── Proses dan validasi setiap baris ─────────────────────
