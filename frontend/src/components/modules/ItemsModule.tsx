@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { itemsApi } from '@/services/api';
+import { IconPackage, IconSearch, IconPlus, IconClose } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
 interface Item { id: string; name: string; sku: string; barcode: string; category_name: string; unit_symbol: string; cost_price: number; min_stock_qty: number; is_active: boolean; }
@@ -52,13 +53,16 @@ export default function ItemsModule() {
     <div className="page-wrap">
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">📦 Master Barang</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <IconPackage size={20} color="var(--primary)" /> Master Barang
+        </h1>
         <div className="filter-bar">
           <div className="search-bar">
-            <span style={{ color: 'var(--text-muted)' }}>🔍</span>
+            <IconSearch size={14} color="var(--text-muted)" />
             <input placeholder="Cari nama, SKU, barcode..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Tambah Barang</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IconPlus size={14} /> Tambah Barang</button>
         </div>
       </div>
 
@@ -68,7 +72,7 @@ export default function ItemsModule() {
           {loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : items.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📦</div><p>Tidak ada barang</p></div>
+            <div className="empty-state"><IconPackage size={40} color="var(--text-muted)" /><p>Tidak ada barang</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>
@@ -109,7 +113,7 @@ export default function ItemsModule() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">Tambah Barang Baru</h2>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}><IconClose size={16} /></button>
             </div>
             <form onSubmit={handleSave}>
               <div className="modal-body">

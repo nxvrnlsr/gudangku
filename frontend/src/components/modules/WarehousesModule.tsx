@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { warehousesApi } from '@/services/api';
+import { IconWarehouse, IconSearch } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
 interface StockItem { item_id: string; item_name: string; sku: string; unit_symbol: string; qty_on_hand: number; qty_available: number; avg_cost_price: number; stock_status: string; batch_count: number; expiry_status: string; }
@@ -9,12 +10,12 @@ interface Warehouse { id: string; name: string; city_name: string; region_name: 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
 export default function WarehousesModule() {
-  const [warehouses, setWarehouses]   = useState<Warehouse[]>([]);
-  const [selectedWh, setSelectedWh]  = useState<string>('');
-  const [stock, setStock]            = useState<StockItem[]>([]);
-  const [loadingWh, setLoadingWh]    = useState(true);
+  const [warehouses, setWarehouses]     = useState<Warehouse[]>([]);
+  const [selectedWh, setSelectedWh]    = useState<string>('');
+  const [stock, setStock]              = useState<StockItem[]>([]);
+  const [loadingWh, setLoadingWh]      = useState(true);
   const [loadingStock, setLoadingStock] = useState(false);
-  const [search, setSearch]          = useState('');
+  const [search, setSearch]            = useState('');
 
   const STATUS_STYLE: Record<string, string> = { normal: 'badge-success', minimum: 'badge-warning', stockout: 'badge-danger', overstock: 'badge-info' };
   const EXPIRY_STYLE: Record<string, string> = { safe: 'badge-success', warning: 'badge-warning', critical: 'badge-danger', expired: 'badge-danger', none: 'badge-neutral' };
@@ -45,12 +46,14 @@ export default function WarehousesModule() {
     <div className="page-wrap">
       <div className="page-header">
         <div>
-          <h1 className="page-title">🏭 Gudang & Posisi Stok</h1>
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <IconWarehouse size={20} color="var(--success)" /> Gudang & Posisi Stok
+          </h1>
           {selectedWarehouse && <p className="text-secondary text-sm">{selectedWarehouse.name} — {selectedWarehouse.city_name}</p>}
         </div>
         <div className="filter-bar">
           <div className="search-bar">
-            <span style={{ color: 'var(--text-muted)' }}>🔍</span>
+            <IconSearch size={14} color="var(--text-muted)" />
             <input placeholder="Cari barang..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
@@ -59,12 +62,9 @@ export default function WarehousesModule() {
       {/* Gudang Selector */}
       <div style={{ display: 'flex', gap: 8 }}>
         {loadingWh ? <div className="spinner" /> : warehouses.map(wh => (
-          <button
-            key={wh.id}
-            className={`btn ${selectedWh === wh.id ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setSelectedWh(wh.id)}
-          >
-            🏭 {wh.name}
+          <button key={wh.id} className={`btn ${selectedWh === wh.id ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setSelectedWh(wh.id)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IconWarehouse size={13} /> {wh.name}
           </button>
         ))}
       </div>
@@ -75,7 +75,7 @@ export default function WarehousesModule() {
           {loadingStock ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : filtered.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">🏭</div><p>Tidak ada stok di gudang ini</p></div>
+            <div className="empty-state"><IconWarehouse size={40} color="var(--text-muted)" /><p>Tidak ada stok di gudang ini</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>

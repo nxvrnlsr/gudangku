@@ -1,15 +1,16 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { issuesApi } from '@/services/api';
+import { IconIssue, IconRefresh, IconAlert } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
 interface Issue { id: string; doc_number: string; status: string; issue_date: string; issue_type: string; warehouse_name: string; customer_name: string; issued_by_name: string; line_count: number; }
 const STATUS_BADGE: Record<string, string> = { draft: 'badge-neutral', confirmed: 'badge-success', cancelled: 'badge-danger' };
 
 export default function IssuesModule() {
-  const [issues, setIssues]     = useState<Issue[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [filterStatus, setFilter] = useState('');
+  const [issues, setIssues]         = useState<Issue[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [filterStatus, setFilter]   = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -26,7 +27,9 @@ export default function IssuesModule() {
   return (
     <div className="page-wrap">
       <div className="page-header">
-        <h1 className="page-title">📤 Pengeluaran Barang</h1>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <IconIssue size={20} color="#8B5CF6" /> Pengeluaran Barang
+        </h1>
         <div className="filter-bar">
           <select className="form-input" style={{ width: 160 }} value={filterStatus} onChange={e => setFilter(e.target.value)}>
             <option value="">Semua Status</option>
@@ -34,12 +37,15 @@ export default function IssuesModule() {
             <option value="confirmed">Dikonfirmasi</option>
             <option value="cancelled">Dibatalkan</option>
           </select>
-          <button className="btn btn-secondary btn-sm" onClick={fetchData}>↻ Refresh</button>
+          <button className="btn btn-secondary btn-sm" onClick={fetchData} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IconRefresh size={13} /> Refresh
+          </button>
         </div>
       </div>
 
-      <div style={{ padding: '12px 16px', background: 'var(--bg-elevated)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-        🤖 <strong style={{ color: '#8B5CF6' }}>FEFO Otomatis:</strong> Saat dikonfirmasi, sistem otomatis memilih batch yang paling dekat kadaluarsanya untuk dikeluarkan duluan
+      <div style={{ padding: '10px 14px', background: 'rgba(139,92,246,0.08)', borderRadius: 'var(--r-md)', border: '1px solid rgba(139,92,246,0.25)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <IconAlert size={15} color="#8B5CF6" />
+        <span><strong style={{ color: '#8B5CF6' }}>FEFO Otomatis:</strong> Saat dikonfirmasi, sistem otomatis memilih batch paling dekat kadaluarsanya untuk dikeluarkan duluan</span>
       </div>
 
       <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -47,12 +53,12 @@ export default function IssuesModule() {
           {loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : issues.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📤</div><p>Belum ada pengeluaran barang</p></div>
+            <div className="empty-state"><IconIssue size={40} color="var(--text-muted)" /><p>Belum ada pengeluaran barang</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>
                 <th>No. Dokumen</th><th>Tanggal</th><th>Gudang</th><th>Jenis</th>
-                <th>Pelanggan</th><th>Jumlah Item</th><th>Status</th>
+                <th>Pelanggan</th><th>Jml Item</th><th>Status</th>
               </tr></thead>
               <tbody>
                 {issues.map(r => (

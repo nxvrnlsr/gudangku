@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { batchesApi } from '@/services/api';
+import { IconBatch, IconRefresh, IconAlert } from '@/components/ui/Icons';
 
 interface Batch { id: string; batch_number: string; item_name: string; sku: string; warehouse_name: string; remaining_qty: number; unit_symbol: string; expiry_date: string; days_until_expiry: number; expiry_status: string; cost_price: number; status: string; }
 interface Summary { expired: number; critical: number; warning: number; safe: number; total_active: number; }
@@ -8,10 +9,10 @@ interface Summary { expired: number; critical: number; warning: number; safe: nu
 const EXPIRY_COLORS: Record<string, string> = { expired: '#EF4444', critical: '#F59E0B', warning: '#06B6D4', safe: '#10B981' };
 
 export default function BatchesModule() {
-  const [batches, setBatches]   = useState<Batch[]>([]);
-  const [summary, setSummary]   = useState<Summary | null>(null);
-  const [filter, setFilter]     = useState<'all'|'expired'|'critical'|'warning'|'safe'>('all');
-  const [loading, setLoading]   = useState(true);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [filter, setFilter]   = useState<'all'|'expired'|'critical'|'warning'|'safe'>('all');
+  const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -28,18 +29,22 @@ export default function BatchesModule() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const FILTER_OPTS = [
-    { key: 'all',      label: 'Semua',    count: summary?.total_active ?? 0,   color: 'var(--text-secondary)' },
-    { key: 'expired',  label: '🔴 Expired', count: summary?.expired ?? 0,     color: '#EF4444' },
-    { key: 'critical', label: '🟠 Kritis',  count: summary?.critical ?? 0,    color: '#F59E0B' },
-    { key: 'warning',  label: '🔵 Peringatan', count: summary?.warning ?? 0,  color: '#06B6D4' },
-    { key: 'safe',     label: '🟢 Aman',   count: summary?.safe ?? 0,         color: '#10B981' },
+    { key: 'all',      label: 'Semua',       count: summary?.total_active ?? 0, color: 'var(--text-secondary)' },
+    { key: 'expired',  label: 'Expired',     count: summary?.expired  ?? 0,     color: '#EF4444' },
+    { key: 'critical', label: 'Kritis',      count: summary?.critical ?? 0,     color: '#F59E0B' },
+    { key: 'warning',  label: 'Peringatan',  count: summary?.warning  ?? 0,     color: '#06B6D4' },
+    { key: 'safe',     label: 'Aman',        count: summary?.safe     ?? 0,     color: '#10B981' },
   ] as const;
 
   return (
     <div className="page-wrap">
       <div className="page-header">
-        <h1 className="page-title">📅 Monitor Batch & Expiry</h1>
-        <button className="btn btn-secondary btn-sm" onClick={fetchData}>↻ Refresh</button>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <IconBatch size={20} color="var(--warning)" /> Monitor Batch & Expiry
+        </h1>
+        <button className="btn btn-secondary btn-sm" onClick={fetchData} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <IconRefresh size={13} /> Refresh
+        </button>
       </div>
 
       {/* Summary Cards */}
@@ -47,6 +52,9 @@ export default function BatchesModule() {
         {FILTER_OPTS.slice(1).map(opt => (
           <div key={opt.key} className="stat-card" style={{ cursor: 'pointer', borderColor: filter === opt.key ? EXPIRY_COLORS[opt.key] : undefined }}
             onClick={() => setFilter(opt.key as typeof filter)}>
+            <div className="stat-icon" style={{ background: `${EXPIRY_COLORS[opt.key]}15`, border: `1px solid ${EXPIRY_COLORS[opt.key]}30` }}>
+              <IconAlert size={16} color={EXPIRY_COLORS[opt.key]} />
+            </div>
             <div className="stat-label">{opt.label}</div>
             <div className="stat-value" style={{ color: EXPIRY_COLORS[opt.key] }}>{opt.count}</div>
             <div className="stat-sub">batch</div>
@@ -70,7 +78,7 @@ export default function BatchesModule() {
           {loading ? (
             <div className="loading-center"><div className="spinner" /></div>
           ) : batches.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📅</div><p>Tidak ada batch untuk filter ini</p></div>
+            <div className="empty-state"><IconBatch size={40} color="var(--text-muted)" /><p>Tidak ada batch untuk filter ini</p></div>
           ) : (
             <table className="data-table">
               <thead><tr>
@@ -83,10 +91,7 @@ export default function BatchesModule() {
                   return (
                     <tr key={b.id}>
                       <td><code style={{ fontSize: 11, color: 'var(--primary)' }}>{b.batch_number}</code></td>
-                      <td>
-                        <div style={{ fontWeight: 500 }}>{b.item_name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{b.sku}</div>
-                      </td>
+                      <td><div style={{ fontWeight: 500 }}>{b.item_name}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{b.sku}</div></td>
                       <td className="text-secondary">{b.warehouse_name}</td>
                       <td style={{ fontWeight: 600 }}>{b.remaining_qty} <span className="text-muted text-xs">{b.unit_symbol}</span></td>
                       <td className="text-secondary">{b.expiry_date ? new Date(b.expiry_date).toLocaleDateString('id-ID') : '—'}</td>
@@ -101,9 +106,7 @@ export default function BatchesModule() {
             </table>
           )}
         </div>
-        <div className="pagination">
-          <span>{batches.length} batch ditampilkan</span>
-        </div>
+        <div className="pagination"><span>{batches.length} batch ditampilkan</span></div>
       </div>
     </div>
   );

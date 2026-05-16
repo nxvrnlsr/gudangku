@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
+import { IconLogo, IconEye, IconEyeOff } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -66,13 +67,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
-            width: 52, height: 52,
-            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-            borderRadius: 14,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, margin: '0 auto 16px',
-            boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
-          }}>🏭</div>
+            }}><IconLogo size={28} /></div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#F1F5F9', margin: 0 }}>
             Gudang<span style={{ color: '#3B82F6' }}>Ku</span>
           </h1>
@@ -118,7 +113,7 @@ export default function LoginPage() {
                   background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 16,
                 }}
               >
-                {showPass ? '🙈' : '👁️'}
+                {showPass ? <IconEyeOff size={15} /> : <IconEye size={15} />}
               </button>
             </div>
           </div>
