@@ -11,10 +11,13 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const { login, isLoading, isAuthenticated } = useAuthStore();
   const router = useRouter();
+  // Guard: jangan redirect sebelum Zustand selesai hydrate dari localStorage
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
 
   useEffect(() => {
-    if (isAuthenticated) router.replace('/dashboard');
-  }, [isAuthenticated, router]);
+    if (hydrated && isAuthenticated) router.replace('/dashboard');
+  }, [hydrated, isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

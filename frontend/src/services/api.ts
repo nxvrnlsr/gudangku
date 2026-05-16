@@ -14,18 +14,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 (token expired) → redirect ke login
+// Handle 401 (token expired) → clear semua auth state → redirect ke login
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
+      // Hapus SEMUA auth state: gk_token (manual) + gk_auth (Zustand persist key)
+      // agar saat redirect ke /, Zustand hydrate ulang dengan state kosong
       localStorage.removeItem('gk_token');
       localStorage.removeItem('gk_user');
-      window.location.href = '/';
+      localStorage.removeItem('gk_auth'); // ← ini yang bikin loop sebelumnya
+      // Hanya redirect jika belum di halaman login
+      if (window.location.pathname !== '/') {
+        window.location.replace('/');
+      }
     }
     return Promise.reject(err);
   }
 );
+
 
 export default api;
 

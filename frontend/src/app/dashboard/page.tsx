@@ -1,8 +1,8 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
-import { useTabsStore, TAB_DEFINITIONS, type TabId } from '@/stores/tabs.store';
+import { useTabsStore, type TabId } from '@/stores/tabs.store';
 import TabBar from '@/components/layout/TabBar';
 import DashboardModule   from '@/components/modules/DashboardModule';
 import ItemsModule       from '@/components/modules/ItemsModule';
@@ -31,12 +31,18 @@ export default function DashboardPage() {
   const { isAuthenticated } = useAuthStore();
   const { openTabs, activeTabId } = useTabsStore();
   const router = useRouter();
+  // Guard: tunggu sampai Zustand selesai hydrate dari localStorage
+  // Tanpa ini, SSR render dengan isAuthenticated=false → redirect prematur → loop
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/');
-  }, [isAuthenticated, router]);
+    if (hydrated && !isAuthenticated) router.replace('/');
+  }, [hydrated, isAuthenticated, router]);
 
-  if (!isAuthenticated) return null;
+  // Saat SSR atau belum hydrate, tampilkan blank agar tidak flash redirect
+  if (!hydrated || !isAuthenticated) return null;
+
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
