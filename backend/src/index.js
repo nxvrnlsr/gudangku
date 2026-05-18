@@ -27,7 +27,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// ─── API Routes — semua modul aktif ────────────
+// ─── API Routes — v1 (Mobile & new integrations) ──────
+app.use('/api/v1', require('./routes/v1'));
+
+// ─── API Routes — Legacy (Desktop Electron, backward compat) ───
 app.use('/api/auth',       require('./modules/auth/auth.routes'));
 app.use('/api/items',      require('./modules/items/items.routes'));
 app.use('/api/warehouses', require('./modules/warehouses/warehouses.routes'));
@@ -37,6 +40,7 @@ app.use('/api/issues',     require('./modules/issues/issues.routes'));
 app.use('/api/transfers',  require('./modules/transfers/transfers.routes'));
 app.use('/api/reports',    require('./modules/reports/reports.routes'));
 app.use('/api/users',      require('./modules/users/users.routes'));
+
 
 // ─── 404 Handler ───────────────────────────────
 app.use((req, res) => {

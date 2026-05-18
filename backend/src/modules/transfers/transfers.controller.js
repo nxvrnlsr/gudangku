@@ -16,23 +16,30 @@ const getAll = async (req, res) => {
     if (status) { params.push(status); conditions.push(`st.status = $${params.length}`); }
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
-    const rows = await db.query(`
-      SELECT st.id, st.doc_number, st.status, st.transfer_date, st.notes,
-             fw.name AS from_warehouse_name, tw.name AS to_warehouse_name,
-             u.name AS requested_by_name,
-             COUNT(stl.id) AS line_count
-      FROM stock_transfers st
-      JOIN warehouses fw ON fw.id = st.from_warehouse_id
-      JOIN warehouses tw ON tw.id = st.to_warehouse_id
-      JOIN users u ON u.id = st.requested_by
-      LEFT JOIN stock_transfer_lines stl ON stl.transfer_id = st.id
-      ${where}
-      GROUP BY st.id, fw.name, tw.name, u.name
-      ORDER BY st.created_at DESC
-      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
-    `, [...params, parseInt(limit), offset]);
+    const [rows, count] = await Promise.all([
+      db.query(`
+        SELECT st.id, st.doc_number, st.status, st.transfer_date, st.notes,
+               fw.name AS from_warehouse_name, tw.name AS to_warehouse_name,
+               u.name AS requested_by_name,
+               COUNT(stl.id) AS line_count
+        FROM stock_transfers st
+        JOIN warehouses fw ON fw.id = st.from_warehouse_id
+        JOIN warehouses tw ON tw.id = st.to_warehouse_id
+        JOIN users u ON u.id = st.requested_by
+        LEFT JOIN stock_transfer_lines stl ON stl.transfer_id = st.id
+        ${where}
+        GROUP BY st.id, fw.name, tw.name, u.name
+        ORDER BY st.created_at DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+      `, [...params, parseInt(limit), offset]),
+      db.query(`SELECT COUNT(*) FROM stock_transfers st ${where}`, params),
+    ]);
 
-    return res.json({ status: 'success', data: rows.rows });
+    return res.json({
+      status: 'success',
+      data: rows.rows,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total: parseInt(count.rows[0].count) },
+    });
   } catch (err) {
     return res.status(500).json({ status: 'error', message: req.t('transfers.serverError') });
   }
@@ -147,7 +154,9 @@ const dispatch = async (req, res) => {
       const available = balResult.rows.length > 0 ? parseFloat(balResult.rows[0].qty_on_hand) : 0;
       if (available < qtyNeeded) {
         const item = await client.query('SELECT name FROM items WHERE id = $1', [line.item_id]);
-        throw new Error(`Stok ${item.rows[0]?.name} di gudang asal tidak cukup. Tersedia: ${available}, Dibutuhkan: ${qtyNeeded}`);
+        const stockErr = new Error(`Stok tidak cukup: ${item.rows[0]?.name}. Tersedia: ${available}, Dibutuhkan: ${qtyNeeded}`);
+        stockErr.statusCode = 400;
+        throw stockErr;
       }
 
       // FEFO: pilih batch terdekat expire dari gudang asal
@@ -202,15 +211,13 @@ const dispatch = async (req, res) => {
     return res.json({ status: 'success', message: req.t('transfers.dispatched', transfer.doc_number) });
   } catch (err) {
     await client.query('ROLLBACK');
-    return res.status(500).json({ status: 'error', message: err.message || req.t('transfers.serverError') });
+    const statusCode = err.statusCode || 500;
+    if (statusCode === 500) console.error('Transfer dispatch error:', err);
+    return res.status(statusCode).json({ status: 'error', message: err.message || req.t('transfers.serverError') });
   } finally {
     client.release();
   }
 };
-
-/**
- * POST /api/transfers/:id/receive — TERIMA transfer (stok masuk ke gudang tujuan)
- */
 const receive = async (req, res) => {
   const client = await db.getClient();
   try {
@@ -251,11 +258,23 @@ const receive = async (req, res) => {
 
       if (qtyReceived <= 0) continue;
 
+      // Guard: batch_id harus ada (set saat dispatch)
+      if (!line.batch_id) {
+        const missingErr = new Error(`Batch tidak ditemukan untuk item_id ${line.item_id}. Pastikan transfer sudah di-dispatch sebelum receive.`);
+        missingErr.statusCode = 400;
+        throw missingErr;
+      }
+
       // Ambil info batch asal untuk copy ke gudang tujuan
       const batchInfo = await client.query(
         `SELECT batch_number, expiry_date, manufacture_date, cost_price FROM batches WHERE id = $1`,
         [line.batch_id]
       );
+      if (batchInfo.rows.length === 0) {
+        const notFoundErr = new Error(`Data batch id=${line.batch_id} tidak ditemukan di database.`);
+        notFoundErr.statusCode = 400;
+        throw notFoundErr;
+      }
 
       const batch = batchInfo.rows[0];
 
@@ -292,7 +311,9 @@ const receive = async (req, res) => {
     return res.json({ status: 'success', message: req.t('transfers.received', transfer.doc_number) });
   } catch (err) {
     await client.query('ROLLBACK');
-    return res.status(500).json({ status: 'error', message: err.message || req.t('transfers.serverError') });
+    const statusCode = err.statusCode || 500;
+    if (statusCode === 500) console.error('Transfer receive error:', err);
+    return res.status(statusCode).json({ status: 'error', message: err.message || req.t('transfers.serverError') });
   } finally {
     client.release();
   }

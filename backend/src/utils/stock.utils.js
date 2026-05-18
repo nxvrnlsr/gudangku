@@ -1,33 +1,29 @@
 const db = require('../config/database');
 
 /**
- * Generate nomor dokumen otomatis
+ * Generate nomor dokumen otomatis menggunakan PostgreSQL SEQUENCE
  * Format: [PREFIX]-[YYYY]-[MM]-[XXXX]
- * Contoh: SR-2026-05-0001 (Stock Receipt), SI-2026-05-0001 (Stock Issue)
+ * Contoh: SR-2026-05-0001
+ * [C-01] Menggunakan NEXTVAL sequence — aman dari race condition concurrent request
  */
 const generateDocNumber = async (client, prefix) => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
 
-  // Tentukan tabel dan kolom berdasarkan prefix
-  const tableMap = {
-    'SR': 'stock_receipts',
-    'SI': 'stock_issues',
-    'ST': 'stock_transfers',
-    'SA': 'stock_adjustments',
-    'SO': 'opname_sessions',
+  const seqMap = {
+    'SR': 'doc_seq_sr',
+    'SI': 'doc_seq_si',
+    'ST': 'doc_seq_st',
+    'SA': 'doc_seq_sa',
+    'SO': 'doc_seq_so',
   };
-  const table = tableMap[prefix];
 
-  // Hitung jumlah dokumen bulan ini untuk sequence number
-  const result = await client.query(
-    `SELECT COUNT(*) FROM ${table}
-     WHERE doc_number LIKE $1`,
-    [`${prefix}-${year}-${month}-%`]
-  );
+  const seqName = seqMap[prefix];
+  if (!seqName) throw new Error(`generateDocNumber: prefix tidak dikenal: ${prefix}`);
 
-  const seq = String(parseInt(result.rows[0].count) + 1).padStart(4, '0');
+  const result = await client.query(`SELECT NEXTVAL('${seqName}') AS seq`);
+  const seq = String(parseInt(result.rows[0].seq)).padStart(4, '0');
   return `${prefix}-${year}-${month}-${seq}`;
 };
 
@@ -53,6 +49,11 @@ const postStockMovement = async (client, params) => {
     transaction_type, reference_id, reference_type,
     created_by,
   } = params;
+
+  // [M-02] Guard: jangan proses movement dengan qty nol
+  if (parseFloat(qty_in) <= 0 && parseFloat(qty_out) <= 0) {
+    throw new Error(`postStockMovement: qty_in atau qty_out harus > 0 (got qty_in=${qty_in}, qty_out=${qty_out})`);
+  }
 
   // ── 1. Ambil saldo saat ini ──────────────────────────────
   const balanceResult = await client.query(

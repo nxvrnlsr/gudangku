@@ -11,6 +11,8 @@ const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // [H-01] Roles sudah di-embed dalam JWT — tidak perlu query DB per request.
+    // Hanya validasi user masih aktif (lightweight check).
     const result = await db.query(
       'SELECT id, name, email, is_active FROM users WHERE id = $1',
       [decoded.userId]
@@ -20,18 +22,10 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ status: 'error', message: req.t('tokenInvalid') });
     }
 
-    const rolesResult = await db.query(
-      `SELECT r.name, ur.warehouse_id, ur.region_id
-       FROM user_roles ur
-       JOIN roles r ON r.id = ur.role_id
-       WHERE ur.user_id = $1`,
-      [decoded.userId]
-    );
-
     req.user = {
       ...result.rows[0],
-      roles: rolesResult.rows,
-      isAdmin: rolesResult.rows.some(r => r.name === 'admin'),
+      roles: decoded.roles || [],
+      isAdmin: (decoded.roles || []).some(r => r.name === 'admin'),
     };
 
     next();

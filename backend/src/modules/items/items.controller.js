@@ -130,24 +130,33 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      category_id, base_unit_id, name, sku, barcode,
-      description, storage_notes, shelf_life_days,
-      min_stock_qty, max_stock_qty, cost_price, is_active,
-    } = req.body;
+    const allowed = [
+      'category_id', 'base_unit_id', 'name', 'sku', 'barcode',
+      'description', 'storage_notes', 'shelf_life_days',
+      'min_stock_qty', 'max_stock_qty', 'cost_price', 'is_active',
+    ];
 
-    const result = await db.query(`
-      UPDATE items SET
-        category_id = COALESCE($1, category_id), base_unit_id = COALESCE($2, base_unit_id),
-        name = COALESCE($3, name), sku = COALESCE($4, sku), barcode = COALESCE($5, barcode),
-        description = COALESCE($6, description), storage_notes = COALESCE($7, storage_notes),
-        shelf_life_days = COALESCE($8, shelf_life_days), min_stock_qty = COALESCE($9, min_stock_qty),
-        max_stock_qty = COALESCE($10, max_stock_qty), cost_price = COALESCE($11, cost_price),
-        is_active = COALESCE($12, is_active), updated_at = NOW()
-      WHERE id = $13 RETURNING *
-    `, [category_id, base_unit_id, name, sku, barcode,
-        description, storage_notes, shelf_life_days,
-        min_stock_qty, max_stock_qty, cost_price, is_active, id]);
+    // [H-03] Partial update — hanya field yang eksplisit dikirim yang diupdate
+    // Ini memungkinkan set field ke NULL (misal: hapus barcode)
+    const setClauses = [];
+    const values = [];
+    let idx = 1;
+    for (const field of allowed) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        setClauses.push(`${field} = $${idx++}`);
+        values.push(req.body[field]);
+      }
+    }
+    if (setClauses.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Tidak ada field yang diupdate.' });
+    }
+    setClauses.push(`updated_at = NOW()`);
+    values.push(id);
+
+    const result = await db.query(
+      `UPDATE items SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ status: 'error', message: req.t('items.notFound') });
@@ -206,4 +215,58 @@ const deleteItem = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, deleteItem, getCategories, getUnits };
+/** GET /api/items/barcode/:barcode — [H-04] Lookup by barcode (untuk scanner mobile) */
+const getByBarcode = async (req, res) => {
+  try {
+    const { barcode } = req.params;
+    const item = await db.query(
+      `SELECT i.id, i.name, i.sku, i.barcode, i.min_stock_qty, i.max_stock_qty,
+              c.name AS category_name, u.symbol AS unit_symbol
+       FROM items i
+       LEFT JOIN item_categories c ON c.id = i.category_id
+       LEFT JOIN units u ON u.id = i.base_unit_id
+       WHERE i.barcode = $1 AND i.is_active = true`, [barcode]
+    );
+    if (item.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Barang dengan barcode tersebut tidak ditemukan.' });
+    }
+    const stock = await db.query(
+      `SELECT w.name AS warehouse, sb.qty_on_hand::float, sb.qty_available::float, sb.avg_cost_price::float,
+              CASE
+                WHEN sb.qty_available <= 0 THEN 'stockout'
+                WHEN sb.qty_available <= i.min_stock_qty THEN 'minimum'
+                ELSE 'normal'
+              END AS status
+       FROM stock_balances sb
+       JOIN warehouses w ON w.id = sb.warehouse_id
+       JOIN items i ON i.id = sb.item_id
+       WHERE sb.item_id = $1 ORDER BY w.name`, [item.rows[0].id]
+    );
+    return res.json({
+      status: 'success',
+      data: { ...item.rows[0], stock_summary: stock.rows },
+    });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: req.t('items.serverError') });
+  }
+};
+
+/** GET /api/items/sku/:sku — Lookup by SKU */
+const getBySku = async (req, res) => {
+  try {
+    const { sku } = req.params;
+    const item = await db.query(
+      `SELECT i.id FROM items WHERE sku ILIKE $1 AND is_active = true LIMIT 1`, [sku]
+    );
+    if (item.rows.length === 0) {
+      return res.status(404).json({ status: 'error', message: 'Barang dengan SKU tersebut tidak ditemukan.' });
+    }
+    // Reuse getById logic via internal redirect
+    req.params.id = item.rows[0].id;
+    return getById(req, res);
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: req.t('items.serverError') });
+  }
+};
+
+module.exports = { getAll, getById, getByBarcode, getBySku, create, update, deleteItem, getCategories, getUnits };
