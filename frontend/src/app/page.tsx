@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
+import { useT } from '@/hooks/useT';
 import { IconLogo, IconEye, IconEyeOff } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
 
@@ -10,8 +11,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const { login, isLoading, isAuthenticated } = useAuthStore();
+  const { t } = useT();
   const router = useRouter();
-  // Guard: jangan redirect sebelum Zustand selesai hydrate dari localStorage
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
 
@@ -23,10 +24,10 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      toast.success('Selamat datang kembali!');
+      toast.success(t('auth.loginSuccess'));
       router.replace('/dashboard');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Login gagal';
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('auth.loginButton');
       toast.error(msg);
     }
   };
@@ -75,19 +76,19 @@ export default function LoginPage() {
             Gudang<span style={{ color: '#3B82F6' }}>Ku</span>
           </h1>
           <p style={{ fontSize: '0.8125rem', color: '#64748B', marginTop: 6 }}>
-            Sistem Manajemen Stok Gudang
+            {t('auth.loginSubtitle')}
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div className="form-group">
-            <label className="form-label" htmlFor="email">Email</label>
+            <label className="form-label" htmlFor="email">{t('auth.email')}</label>
             <input
               id="email"
               type="email"
               className="form-input"
-              placeholder="Masukkan email Anda"
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -96,13 +97,13 @@ export default function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
+            <label className="form-label" htmlFor="password">{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
               <input
                 id="password"
                 type={showPass ? 'text' : 'password'}
                 className="form-input"
-                placeholder="••••••••"
+                placeholder={t('auth.passwordPlaceholder')}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -128,9 +129,9 @@ export default function LoginPage() {
             style={{ marginTop: 8, justifyContent: 'center' }}
           >
             {isLoading ? (
-              <><span className="spinner" style={{ width: 16, height: 16 }} /> Memproses...</>
+              <><span className="spinner" style={{ width: 16, height: 16 }} /> {t('auth.loggingIn')}</>
             ) : (
-              'Masuk →'
+              t('auth.loginButton') + ' →'
             )}
           </button>
         </form>

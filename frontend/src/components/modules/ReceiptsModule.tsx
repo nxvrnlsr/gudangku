@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useEffect, useState, useCallback } from 'react';
 import { receiptsApi, warehousesApi } from '@/services/api';
 import ItemSelector from '@/components/ui/ItemSelector';
@@ -31,6 +32,7 @@ const newLine = (): LineItem => ({ item_id: '', item_name: '', unit_symbol: '', 
 
 /* ─── Component ──────────────────────────────────────────────── */
 export default function ReceiptsModule() {
+  const { t } = useT();
   const [receipts,     setReceipts]     = useState<Receipt[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [filterStatus, setFilter]       = useState('');
@@ -51,7 +53,7 @@ export default function ReceiptsModule() {
     try {
       const res = await receiptsApi.getAll({ status: filterStatus || undefined, limit: 100 });
       setReceipts(res.data.data);
-    } catch { toast.error('Gagal memuat data'); } finally { setLoading(false); }
+    } catch { toast.error(t('receipts.loadError')); } finally { setLoading(false); }
   }, [filterStatus]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -70,13 +72,13 @@ export default function ReceiptsModule() {
 
   /* ── Submit ────────────────────────── */
   const handleSave = async (confirmAfter: boolean) => {
-    if (!form.warehouse_id) { toast.error('Pilih gudang tujuan'); return; }
-    if (lines.some(l => !l.item_id)) { toast.error('Semua baris harus memiliki barang'); return; }
+    if (!form.warehouse_id) { toast.error(t('receipts.warehouseRequired')); return; }
+    if (lines.some(l => !l.item_id)) { toast.error(t('common.noData')); return; }
     if (lines.some(l => !l.qty_received || parseFloat(l.qty_received) <= 0)) {
-      toast.error('Qty setiap baris harus lebih dari 0'); return;
+      toast.error(t('receipts.qty')); return;
     }
     if (confirmAfter && lines.some(l => !l.batch_number || !l.expiry_date)) {
-      toast.error('No. Batch dan Tanggal Kadaluarsa wajib diisi untuk konfirmasi'); return;
+      toast.error(t('receipts.batchNumber')); return;
     }
     setSaving(true);
     try {
@@ -104,7 +106,7 @@ export default function ReceiptsModule() {
       setLines([newLine()]);
       fetchData();
     } catch (err: unknown) {
-      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('receipts.createSuccess'));
     } finally { setSaving(false); }
   };
 

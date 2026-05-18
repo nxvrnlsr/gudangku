@@ -2,18 +2,20 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { i18n } = require('./middleware/i18n');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ─── Middleware ────────────────────────────────
-app.use(helmet());           // Security headers
+app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
 }));
-app.use(express.json());     // Parse JSON request body
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(i18n);   // ← attach req.t() to every request
 
 // ─── Health Check ──────────────────────────────
 app.get('/', (req, res) => {

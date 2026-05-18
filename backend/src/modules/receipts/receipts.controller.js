@@ -42,7 +42,7 @@ const getAll = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('receipts.serverError') });
   }
 };
 
@@ -73,12 +73,12 @@ const getById = async (req, res) => {
       `, [id]),
     ]);
 
-    if (header.rows.length === 0) return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+    if (header.rows.length === 0) return res.status(404).json({ status: 'error', message: req.t('receipts.notFound') });
 
     return res.json({ status: 'success', data: { ...header.rows[0], lines: lines.rows } });
   } catch (err) {
     console.error('getById error:', err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('receipts.serverError') });
   }
 };
 
@@ -94,7 +94,7 @@ const create = async (req, res) => {
     } = req.body;
 
     if (!warehouse_id || !lines || lines.length === 0) {
-      return res.status(400).json({ status: 'error', message: 'Gudang dan minimal 1 baris barang wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('receipts.warehouseRequired') });
     }
 
     // ── Resolve supplier_id dari nama jika perlu ─────────────
@@ -228,14 +228,14 @@ const create = async (req, res) => {
     return res.status(201).json({
       status: 'success',
       message: confirm_immediately
-        ? `✅ Penerimaan ${docNumber} dikonfirmasi. Stok berhasil diperbarui.`
-        : `📄 Dokumen ${docNumber} berhasil disimpan sebagai draft.`,
+        ? req.t('receipts.confirmed')
+        : req.t('receipts.created'),
       data: { ...receipt, status: confirm_immediately ? 'confirmed' : 'draft' },
     });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Receipt create error:', err);
-    return res.status(500).json({ status: 'error', message: err.message || 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: err.message || req.t('receipts.serverError') });
   } finally {
     client.release();
   }
@@ -273,12 +273,12 @@ const confirm = async (req, res) => {
     );
 
     if (receiptResult.rows.length === 0) {
-      return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+      return res.status(404).json({ status: 'error', message: req.t('receipts.notFound') });
     }
 
     const receipt = receiptResult.rows[0];
     if (receipt.status !== 'draft') {
-      return res.status(400).json({ status: 'error', message: `Dokumen sudah berstatus '${receipt.status}', tidak bisa dikonfirmasi ulang.` });
+      return res.status(400).json({ status: 'error', message: req.t('receipts.alreadyConfirmed') });
     }
 
     // Ambil info batch dari request body (batch_number, expiry_date per line)
@@ -340,11 +340,11 @@ const confirm = async (req, res) => {
     );
 
     await client.query('COMMIT');
-    return res.json({ status: 'success', message: `Penerimaan ${receipt.doc_number} dikonfirmasi. Stok berhasil diperbarui.` });
+    return res.json({ status: 'success', message: req.t('receipts.confirmed') });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Receipt confirm error:', err);
-    return res.status(500).json({ status: 'error', message: err.message || 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: err.message || req.t('receipts.serverError') });
   } finally {
     client.release();
   }
@@ -359,11 +359,11 @@ const cancel = async (req, res) => {
       [req.params.id]
     );
     if (result.rows.length === 0) {
-      return res.status(400).json({ status: 'error', message: 'Dokumen tidak ditemukan atau sudah dikonfirmasi (tidak bisa dibatalkan).' });
+      return res.status(400).json({ status: 'error', message: req.t('receipts.alreadyConfirmed') });
     }
-    return res.json({ status: 'success', message: `Dokumen ${result.rows[0].doc_number} dibatalkan.` });
+    return res.json({ status: 'success', message: req.t('receipts.cancelled') });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('receipts.serverError') });
   }
 };
 

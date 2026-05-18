@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useEffect, useState, useCallback } from 'react';
 import { itemsApi } from '@/services/api';
 import { IconPackage, IconSearch, IconPlus, IconClose, IconEdit, IconDelete } from '@/components/ui/Icons';
@@ -24,6 +25,7 @@ const BLANK: FormState = {
 const fmtCurrency = (n: number) => 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
 
 export default function ItemsModule() {
+  const { t } = useT();
   const [items, setItems]             = useState<Item[]>([]);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
@@ -46,7 +48,7 @@ export default function ItemsModule() {
       const res = await itemsApi.getAll({ search, page, limit: 20 });
       setItems(res.data.data);
       setPagination(res.data.pagination);
-    } catch { toast.error('Gagal memuat data barang'); } finally { setLoading(false); }
+    } catch { toast.error(t('items.serverError')); } finally { setLoading(false); }
   }, [search, page]);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
@@ -88,15 +90,15 @@ export default function ItemsModule() {
       };
       if (modalMode === 'create') {
         await itemsApi.create(payload);
-        toast.success('Barang berhasil ditambahkan!');
+        toast.success(t('items.createSuccess'));
       } else if (editingId) {
         await itemsApi.update(editingId, payload);
-        toast.success('Barang berhasil diperbarui!');
+        toast.success(t('items.updateSuccess'));
       }
       setModalMode(null);
       fetchItems();
     } catch (err: unknown) {
-      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('items.serverError'));
     } finally { setSaving(false); }
   };
 
@@ -106,7 +108,7 @@ export default function ItemsModule() {
       await itemsApi.update(item.id, { is_active: !item.is_active });
       toast.success(`${item.name} → ${!item.is_active ? 'Aktif' : 'Nonaktif'}`);
       fetchItems();
-    } catch { toast.error('Gagal mengubah status'); }
+    } catch { toast.error(t('items.statusToggled')); }
   };
 
   /* ── Delete ──────────────────────────────────────────── */
@@ -119,7 +121,7 @@ export default function ItemsModule() {
       setDeleteTarget(null);
       fetchItems();
     } catch (err: unknown) {
-      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menghapus');
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('items.deleteError'));
     } finally { setDeleting(false); }
   };
 

@@ -13,7 +13,7 @@ const getAll = async (req, res) => {
     `);
     return res.status(200).json({ status: 'success', data: result.rows });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('warehouses.serverError') });
   }
 };
 
@@ -30,7 +30,7 @@ const getById = async (req, res) => {
       db.query(`SELECT * FROM warehouse_locations WHERE warehouse_id = $1 ORDER BY zone, rack, bin`, [id]),
     ]);
     if (whResult.rows.length === 0) {
-      return res.status(404).json({ status: 'error', message: 'Gudang tidak ditemukan.' });
+      return res.status(404).json({ status: 'error', message: req.t('warehouses.notFound') });
     }
     return res.status(200).json({
       status: 'success',

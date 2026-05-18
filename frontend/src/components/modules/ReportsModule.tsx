@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useState } from 'react';
 import { reportsApi } from '@/services/api';
 import { IconReport, IconDownload, IconFolder, IconRefresh, IconInfo, IconClose } from '@/components/ui/Icons';
@@ -8,6 +9,7 @@ interface StockRow  { SKU: string; 'Nama Barang': string; Kategori: string; Satu
 interface ExpiryRow { 'No. Batch': string; 'Nama Barang': string; SKU: string; Gudang: string; 'Qty Sisa': number; 'Tgl Kadaluarsa': string; 'Sisa Hari': number; Status: string; }
 
 export default function ReportsModule() {
+  const { t } = useT();
   const [activeReport, setActiveReport] = useState<'stock'|'expiry'|'card'>('stock');
   const [stockData,    setStockData]    = useState<StockRow[]>([]);
   const [expiryData,   setExpiryData]   = useState<ExpiryRow[]>([]);
@@ -19,13 +21,13 @@ export default function ReportsModule() {
   const fetchStockPosition = async () => {
     setLoading(true);
     try { const res = await reportsApi.stockPosition(); setStockData(res.data.data); }
-    catch { toast.error('Gagal memuat laporan'); } finally { setLoading(false); }
+    catch { toast.error(t('reports.loadError')); } finally { setLoading(false); }
   };
 
   const fetchExpiry = async () => {
     setLoading(true);
     try { const res = await reportsApi.expiryReport({ days: expiryDays }); setExpiryData(res.data.data); }
-    catch { toast.error('Gagal memuat laporan'); } finally { setLoading(false); }
+    catch { toast.error(t('reports.loadError')); } finally { setLoading(false); }
   };
 
   const handleExport = async (type: 'stock'|'expiry') => {
@@ -36,14 +38,14 @@ export default function ReportsModule() {
         : await reportsApi.expiryReport({ export: 'excel', days: expiryDays });
       setExportedPath(res.data.export?.filePath ?? '');
       toast.success(`File tersimpan: ${res.data.export?.fileName}`);
-    } catch { toast.error('Gagal export'); } finally { setExporting(false); }
+    } catch { toast.error(t('reports.loadError')); } finally { setExporting(false); }
   };
 
   const openFolder = async () => {
     try {
       await reportsApi.openFolder(exportedPath ? exportedPath.substring(0, exportedPath.lastIndexOf('\\')) : undefined);
-      toast.success('Folder dibuka di Windows Explorer');
-    } catch { toast.error('Gagal membuka folder'); }
+      toast.success(t('reports.exportSuccess'));
+    } catch { toast.error(t('reports.loadError')); }
   };
 
   const EXPIRY_STYLE: Record<string, string> = { EXPIRED: 'badge-danger', KRITIS: 'badge-warning', PERINGATAN: 'badge-info', AMAN: 'badge-success' };
@@ -181,7 +183,7 @@ export default function ReportsModule() {
         }}>
           {/* Left — info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-            <IconInfo size={14} color="var(--icon-success)" style={{ flexShrink: 0 }} />
+            <span style={{ flexShrink: 0, display: 'flex' }}><IconInfo size={14} color="var(--icon-success)" /></span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               File tersimpan di: <code style={{ color: 'var(--success)', fontSize: 11 }}>{exportedPath}</code>
             </span>

@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useEffect, useState, useCallback } from 'react';
 import { transfersApi, warehousesApi } from '@/services/api';
 import ItemSelector from '@/components/ui/ItemSelector';
@@ -25,6 +26,7 @@ const newLine = (): LineItem => ({ item_id: '', item_name: '', unit_symbol: '', 
 
 /* ─── Component ─────────────────────────────────────────────── */
 export default function TransfersModule() {
+  const { t } = useT();
   const [transfers,  setTransfers]  = useState<Transfer[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -40,7 +42,7 @@ export default function TransfersModule() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try { const res = await transfersApi.getAll({ limit: 100 }); setTransfers(res.data.data); }
-    catch { toast.error('Gagal memuat data'); } finally { setLoading(false); }
+    catch { toast.error(t('transfers.loadError')); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -58,9 +60,9 @@ export default function TransfersModule() {
 
   /* ── Submit ───────────────────────── */
   const handleSave = async () => {
-    if (!form.from_warehouse_id || !form.to_warehouse_id) { toast.error('Pilih gudang asal dan tujuan'); return; }
-    if (form.from_warehouse_id === form.to_warehouse_id) { toast.error('Gudang asal dan tujuan tidak boleh sama'); return; }
-    if (lines.some(l => !l.item_id || !l.qty_to_transfer)) { toast.error('Semua baris harus diisi'); return; }
+    if (!form.from_warehouse_id || !form.to_warehouse_id) { toast.error(t('transfers.warehouseRequired')); return; }
+    if (form.from_warehouse_id === form.to_warehouse_id) { toast.error(t('transfers.sameWarehouse')); return; }
+    if (lines.some(l => !l.item_id || !l.qty_to_transfer)) { toast.error(t('common.noData')); return; }
     setSaving(true);
     try {
       const body = {
@@ -74,7 +76,7 @@ export default function TransfersModule() {
       setLines([newLine()]);
       fetchData();
     } catch (err: unknown) {
-      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('transfers.serverError'));
     } finally { setSaving(false); }
   };
 

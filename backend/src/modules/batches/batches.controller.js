@@ -1,4 +1,4 @@
-const db = require('../../config/database');
+﻿const db = require('../../config/database');
 
 /** GET /api/batches — Monitor semua batch & expiry dengan filter */
 const getAll = async (req, res) => {
@@ -24,13 +24,13 @@ const getAll = async (req, res) => {
       db.query(`
         SELECT
           b.id, b.batch_number, b.manufacture_date, b.expiry_date,
-          b.initial_qty, b.remaining_qty, b.cost_price, b.status,
+          b.initial_qty::float, b.remaining_qty::float, b.cost_price::float, b.status,
           b.created_at AS receipt_date,
           i.name AS item_name, i.sku,
           u.symbol AS unit_symbol,
           w.name AS warehouse_name, w.code AS warehouse_code,
           c.name AS category_name,
-          (b.expiry_date - CURRENT_DATE) AS days_until_expiry,
+          (b.expiry_date - CURRENT_DATE)::int AS days_until_expiry,
           CASE
             WHEN b.expiry_date IS NULL THEN 'no_expiry'
             WHEN b.expiry_date < CURRENT_DATE THEN 'expired'
@@ -60,7 +60,7 @@ const getAll = async (req, res) => {
     });
   } catch (err) {
     console.error('Batches getAll error:', err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('batches.serverError') });
   }
 };
 
@@ -85,7 +85,7 @@ const getSummary = async (req, res) => {
 
     return res.status(200).json({ status: 'success', data: result.rows[0] });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('batches.serverError') });
   }
 };
 
@@ -97,7 +97,10 @@ const updateStatus = async (req, res) => {
     const allowed = ['quarantine', 'written_off'];
 
     if (!allowed.includes(status)) {
-      return res.status(400).json({ status: 'error', message: `Status harus salah satu dari: ${allowed.join(', ')}` });
+      const msg = req.lang === 'id'
+        ? `Status harus salah satu dari: ${allowed.join(', ')}`
+        : `Status must be one of: ${allowed.join(', ')}`;
+      return res.status(400).json({ status: 'error', message: msg });
     }
 
     const result = await db.query(
@@ -105,12 +108,12 @@ const updateStatus = async (req, res) => {
       [status, id]
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ status: 'error', message: 'Batch tidak ditemukan.' });
+      return res.status(404).json({ status: 'error', message: req.t('batches.notFound') });
     }
 
-    return res.status(200).json({ status: 'success', message: `Batch berhasil diubah ke status ${status}.`, data: result.rows[0] });
+    return res.status(200).json({ status: 'success', message: req.t('batches.updated'), data: result.rows[0] });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('batches.serverError') });
   }
 };
 

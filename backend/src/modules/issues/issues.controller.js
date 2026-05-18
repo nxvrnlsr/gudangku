@@ -31,7 +31,7 @@ const getAll = async (req, res) => {
 
     return res.json({ status: 'success', data: rows.rows });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('issues.serverError') });
   }
 };
 
@@ -56,10 +56,10 @@ const getById = async (req, res) => {
         WHERE sil.issue_id = $1
       `, [req.params.id]),
     ]);
-    if (header.rows.length === 0) return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+    if (header.rows.length === 0) return res.status(404).json({ status: 'error', message: req.t('issues.notFound') });
     return res.json({ status: 'success', data: { ...header.rows[0], lines: lines.rows } });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('issues.serverError') });
   }
 };
 
@@ -71,7 +71,7 @@ const create = async (req, res) => {
     const { warehouse_id, customer_id, issue_date, issue_type = 'delivery', notes, lines } = req.body;
 
     if (!warehouse_id || !lines || lines.length === 0) {
-      return res.status(400).json({ status: 'error', message: 'Gudang dan minimal 1 baris barang wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('issues.warehouseRequired') });
     }
 
     const docNumber = await generateDocNumber(client, 'SI');
@@ -92,10 +92,10 @@ const create = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    return res.status(201).json({ status: 'success', message: `Dokumen ${docNumber} berhasil dibuat.`, data: issue });
+    return res.status(201).json({ status: 'success', message: req.t('issues.created'), data: issue });
   } catch (err) {
     await client.query('ROLLBACK');
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('issues.serverError') });
   } finally {
     client.release();
   }
@@ -123,11 +123,11 @@ const confirm = async (req, res) => {
       WHERE si.id = $1 GROUP BY si.id
     `, [id]);
 
-    if (issueResult.rows.length === 0) return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+    if (issueResult.rows.length === 0) return res.status(404).json({ status: 'error', message: req.t('issues.notFound') });
 
     const issue = issueResult.rows[0];
     if (issue.status !== 'draft') {
-      return res.status(400).json({ status: 'error', message: `Status dokumen adalah '${issue.status}', tidak bisa dikonfirmasi.` });
+      return res.status(400).json({ status: 'error', message: req.t('issues.alreadyConfirmed') });
     }
 
     // Proses setiap baris dengan FEFO
@@ -203,11 +203,11 @@ const confirm = async (req, res) => {
     );
 
     await client.query('COMMIT');
-    return res.json({ status: 'success', message: `Pengeluaran ${issue.doc_number} dikonfirmasi. Stok diperbarui dengan metode FEFO.` });
+    return res.json({ status: 'success', message: req.t('issues.confirmed') });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Issue confirm error:', err);
-    return res.status(500).json({ status: 'error', message: err.message || 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: err.message || req.t('issues.serverError') });
   } finally {
     client.release();
   }
@@ -221,10 +221,10 @@ const cancel = async (req, res) => {
        WHERE id = $1 AND status = 'draft' RETURNING doc_number`,
       [req.params.id]
     );
-    if (result.rows.length === 0) return res.status(400).json({ status: 'error', message: 'Dokumen tidak ditemukan atau sudah dikonfirmasi.' });
-    return res.json({ status: 'success', message: `Dokumen ${result.rows[0].doc_number} dibatalkan.` });
+    if (result.rows.length === 0) return res.status(400).json({ status: 'error', message: req.t('issues.alreadyConfirmed') });
+    return res.json({ status: 'success', message: req.t('issues.cancelled') });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('issues.serverError') });
   }
 };
 

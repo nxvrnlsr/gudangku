@@ -5,11 +5,16 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Inject JWT token ke setiap request
+// Inject JWT token + Accept-Language ke setiap request
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('gk_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
+
+    // Kirim bahasa yang dipilih user ke backend agar pesan error ikut bahasa yang sama
+    const langStore = localStorage.getItem('gk_lang');
+    const lang = langStore ? (JSON.parse(langStore)?.state?.lang ?? 'en') : 'en';
+    config.headers['Accept-Language'] = lang;
   }
   return config;
 });

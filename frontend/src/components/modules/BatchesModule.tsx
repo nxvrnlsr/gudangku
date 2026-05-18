@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useEffect, useState, useCallback } from 'react';
 import { batchesApi } from '@/services/api';
 import { IconBatch, IconRefresh, IconAlert } from '@/components/ui/Icons';
@@ -9,6 +10,7 @@ interface Summary { expired: number; critical: number; warning: number; safe: nu
 const EXPIRY_COLORS: Record<string, string> = { expired: '#EF4444', critical: '#F59E0B', warning: '#06B6D4', safe: '#10B981' };
 
 export default function BatchesModule() {
+  const { t } = useT();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [filter, setFilter]   = useState<'all'|'expired'|'critical'|'warning'|'safe'>('all');

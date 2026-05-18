@@ -20,11 +20,11 @@ const stockPosition = async (req, res) => {
         c.name AS "Kategori",
         un.symbol AS "Satuan",
         w.name AS "Gudang",
-        sb.qty_on_hand AS "Qty On Hand",
-        sb.qty_reserved AS "Qty Reserved",
-        sb.qty_available AS "Qty Available",
-        sb.avg_cost_price AS "HPP Rata-Rata",
-        ROUND((sb.qty_on_hand * sb.avg_cost_price)::numeric, 0) AS "Nilai Stok (Rp)",
+        sb.qty_on_hand::float    AS "Qty On Hand",
+        sb.qty_reserved::float   AS "Qty Reserved",
+        sb.qty_available::float  AS "Qty Available",
+        sb.avg_cost_price::float AS "HPP Rata-Rata",
+        ROUND((sb.qty_on_hand * sb.avg_cost_price)::numeric, 0)::float AS "Nilai Stok (Rp)",
         CASE
           WHEN sb.qty_available <= 0 THEN 'Stockout'
           WHEN sb.qty_available <= i.min_stock_qty THEN 'Minimum'
@@ -42,12 +42,12 @@ const stockPosition = async (req, res) => {
 
     if (doExport === 'excel') {
       const saved = await saveExcelFile(result.rows, 'Posisi Stok', 'posisi-stok', 'Posisi-Stok', req.query.custom_path);
-      return res.json({ status: 'success', message: 'File berhasil disimpan.', export: saved });
+      return res.json({ status: 'success', message: req.t('reports.fileSaved'), export: saved });
     }
     return res.json({ status: 'success', data: result.rows, total: result.rows.length });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('reports.serverError') });
   }
 };
 
@@ -69,10 +69,10 @@ const expiryReport = async (req, res) => {
         i.sku AS "SKU",
         c.name AS "Kategori",
         w.name AS "Gudang",
-        b.remaining_qty AS "Qty Sisa",
+        b.remaining_qty::float AS "Qty Sisa",
         un.symbol AS "Satuan",
         TO_CHAR(b.expiry_date, 'DD/MM/YYYY') AS "Tgl Kadaluarsa",
-        (b.expiry_date - CURRENT_DATE) AS "Sisa Hari",
+        (b.expiry_date - CURRENT_DATE)::int AS "Sisa Hari",
         CASE
           WHEN b.expiry_date < CURRENT_DATE THEN 'EXPIRED'
           WHEN b.expiry_date <= CURRENT_DATE + 7 THEN 'KRITIS'
@@ -90,11 +90,11 @@ const expiryReport = async (req, res) => {
 
     if (doExport === 'excel') {
       const saved = await saveExcelFile(result.rows, 'Laporan Kadaluarsa', 'expiry', 'Laporan-Expiry', req.query.custom_path);
-      return res.json({ status: 'success', message: 'File berhasil disimpan.', export: saved });
+      return res.json({ status: 'success', message: req.t('reports.fileSaved'), export: saved });
     }
     return res.json({ status: 'success', data: result.rows, total: result.rows.length });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('reports.serverError') });
   }
 };
 
@@ -106,7 +106,7 @@ const stockCard = async (req, res) => {
   try {
     const { item_id, warehouse_id, start_date, end_date, export: doExport } = req.query;
     if (!item_id || !warehouse_id) {
-      return res.status(400).json({ status: 'error', message: 'item_id dan warehouse_id wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('reports.itemWarehouseRequired') });
     }
     const params = [item_id, warehouse_id];
     const conditions = [`sl.item_id = $1`, `sl.warehouse_id = $2`];
@@ -119,10 +119,10 @@ const stockCard = async (req, res) => {
         sl.transaction_type AS "Jenis",
         sl.reference_type AS "Referensi",
         b.batch_number AS "No. Batch",
-        sl.qty_in AS "Masuk",
-        sl.qty_out AS "Keluar",
-        sl.running_balance AS "Saldo",
-        sl.cost_price AS "HPP",
+        sl.qty_in::float        AS "Masuk",
+        sl.qty_out::float       AS "Keluar",
+        sl.running_balance::float AS "Saldo",
+        sl.cost_price::float    AS "HPP",
         u.name AS "Oleh"
       FROM stock_ledger sl
       LEFT JOIN batches b ON b.id = sl.batch_id
@@ -133,11 +133,11 @@ const stockCard = async (req, res) => {
 
     if (doExport === 'excel') {
       const saved = await saveExcelFile(result.rows, 'Kartu Stok', 'kartu-stok', 'Kartu-Stok', req.query.custom_path);
-      return res.json({ status: 'success', message: 'File berhasil disimpan.', export: saved });
+      return res.json({ status: 'success', message: req.t('reports.fileSaved'), export: saved });
     }
     return res.json({ status: 'success', data: result.rows, total: result.rows.length });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('reports.serverError') });
   }
 };
 
@@ -179,7 +179,7 @@ const dashboard = async (req, res) => {
       },
     });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('reports.serverError') });
   }
 };
 
@@ -200,10 +200,10 @@ const updateExportSettings = async (req, res) => {
   try {
     const { export_path } = req.body;
     if (!export_path) {
-      return res.status(400).json({ status: 'error', message: 'export_path wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('reports.exportPathRequired') });
     }
     const newPath = await updateExportPath(export_path, req.user.id);
-    return res.json({ status: 'success', message: `Path export diubah ke: ${newPath}`, data: { path: newPath } });
+    return res.json({ status: 'success', message: req.t('reports.pathUpdated', newPath), data: { path: newPath } });
   } catch (err) {
     return res.status(400).json({ status: 'error', message: err.message });
   }
@@ -217,11 +217,11 @@ const openExportFolder = async (req, res) => {
     const targetPath = folder_path || config.basePath;
     const opened = openFolder(targetPath);
     if (!opened) {
-      return res.status(404).json({ status: 'error', message: `Folder tidak ditemukan: ${targetPath}` });
+      return res.status(404).json({ status: 'error', message: req.t('reports.folderNotFound', targetPath) });
     }
-    return res.json({ status: 'success', message: 'Folder dibuka di Windows Explorer.' });
+    return res.json({ status: 'success', message: req.t('reports.folderOpened') });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('reports.serverError') });
   }
 };
 

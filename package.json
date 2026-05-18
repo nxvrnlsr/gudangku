@@ -1,21 +1,101 @@
 {
   "name": "gudangku",
   "version": "1.0.0",
-  "description": "Software manajemen dan perhitungan stok gudang untuk distribusi bahan pokok (sembako/FMCG) skala nasional di seluruh Indonesia.",
-  "main": "migrate.js",
-  "directories": {
-    "doc": "docs"
+  "description": "Software manajemen stok gudang untuk distribusi bahan pokok skala nasional.",
+  "main": "electron/main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nxvrnlsr/gudangku"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "electron:dev": "set ELECTRON_ENV=development && electron .",
+    "electron:build": "npm run frontend:build && electron-builder --win --x64",
+    "electron:publish": "npm run frontend:build && electron-builder --win --x64 --publish always",
+    "frontend:build": "cd frontend && npm run build && node ../scripts/postbuild.js",
+    "backend:start": "cd backend && node src/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop all",
+    "pm2:restart": "pm2 restart all",
+    "pm2:status": "pm2 status",
+    "pm2:logs": "pm2 logs"
   },
-  "keywords": [],
+  "keywords": [
+    "warehouse",
+    "inventory",
+    "gudang"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.3",
     "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "electron": "^36.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.gudangku.app",
+    "productName": "GudangKu",
+    "copyright": "Copyright © 2025-2026 GudangKu",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "asar": false,
+    "files": [
+      "electron/**/*",
+      "backend/src/**/*",
+      "backend/.env",
+      "backend/node_modules/**/*",
+      "frontend/.next/standalone/**/*",
+      "frontend/public/**/*",
+      "scripts/postbuild.js",
+      "!**/node_modules/.cache",
+      "!**/.git"
+    ],
+    "extraResources": [],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "electron/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GudangKu",
+      "menuCategory": "GudangKu",
+      "installerIcon": "electron/assets/icon.ico",
+      "uninstallerIcon": "electron/assets/icon.ico",
+      "installerSidebar": "electron/assets/installer-sidebar.bmp",
+      "uninstallerSidebar": "electron/assets/installer-sidebar.bmp",
+      "installerHeader": "electron/assets/installer-header.bmp",
+      "license": "electron/assets/license.txt",
+      "installerLanguages": [
+        "English"
+      ],
+      "language": "1033",
+      "multiLanguageInstaller": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "nxvrnlsr",
+      "repo": "gudangku",
+      "releaseType": "release"
+    }
   }
 }

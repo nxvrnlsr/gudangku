@@ -51,33 +51,63 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 export default function DashboardModule() {
-  const [data, setData]     = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { openTab }         = useTabsStore();
-  const permissions         = usePermissions();
+  const [data, setData]       = useState<DashboardData | null>(null);
+  const [loading, setLoading]  = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { openTab }            = useTabsStore();
+  const permissions            = usePermissions();
 
   // Filter features by what the current user can access
   const visibleFeatures = FEATURES.filter(f => permissions.allowedTabs.includes(f.id));
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async (manual = false) => {
+    if (manual) setRefreshing(true);
     try {
       const res = await reportsApi.dashboard();
       setData(res.data.data);
-    } catch { /* ignore */ } finally { setLoading(false); }
+    } catch { /* ignore */ } finally {
+      setLoading(false);
+      if (manual) setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+  useEffect(() => {
+    fetchDashboard();
+
+    // Auto-refresh every 30 seconds so batch expiry stays current
+    const interval = setInterval(fetchDashboard, 30_000);
+
+    // Also refresh when user switches back to this window/tab
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchDashboard(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [fetchDashboard]);
 
   return (
     <div className="page-wrap" style={{ overflow: 'hidden auto' }}>
       {/* ── Greeting ───────────────────────────────────────────── */}
-      <div>
-        <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Selamat datang
-        </h1>
-        <p className="text-secondary text-sm" style={{ marginTop: 4 }}>
-          {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Selamat datang
+          </h1>
+          <p className="text-secondary text-sm" style={{ marginTop: 4 }}>
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+        <button
+          onClick={() => fetchDashboard(true)}
+          disabled={refreshing}
+          className="btn btn-ghost"
+          style={{ fontSize: 'var(--text-xs)', gap: 6, opacity: refreshing ? 0.6 : 1 }}
+        >
+          <span style={{ display: 'inline-block', animation: refreshing ? 'spin 1s linear infinite' : 'none' }}>↻</span>
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
       {loading ? (

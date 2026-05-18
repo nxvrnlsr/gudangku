@@ -17,17 +17,17 @@ export interface Tab {
   icon: string;
 }
 
-// Definisi semua tab yang tersedia (urutan di tab bar)
+// Tab definitions — labels are i18n keys resolved by TabBar
 export const TAB_DEFINITIONS: Record<TabId, Tab> = {
-  dashboard:  { id: 'dashboard',  label: 'Dashboard',    icon: '⊞' },
-  items:      { id: 'items',      label: 'Master Barang', icon: '📦' },
-  warehouses: { id: 'warehouses', label: 'Gudang & Stok', icon: '🏭' },
-  batches:    { id: 'batches',    label: 'Batch & Expiry',icon: '📅' },
-  receipts:   { id: 'receipts',   label: 'Penerimaan',   icon: '📥' },
-  issues:     { id: 'issues',     label: 'Pengeluaran',  icon: '📤' },
-  transfers:  { id: 'transfers',  label: 'Transfer',     icon: '🔀' },
-  reports:    { id: 'reports',    label: 'Laporan',      icon: '📊' },
-  settings:   { id: 'settings',   label: 'Pengaturan',   icon: '⚙️' },
+  dashboard:  { id: 'dashboard',  label: 'tabs.dashboard',  icon: '⊞' },
+  items:      { id: 'items',      label: 'tabs.items',      icon: '📦' },
+  warehouses: { id: 'warehouses', label: 'tabs.warehouses', icon: '🏭' },
+  batches:    { id: 'batches',    label: 'tabs.batches',    icon: '📅' },
+  receipts:   { id: 'receipts',   label: 'tabs.receipts',   icon: '📥' },
+  issues:     { id: 'issues',     label: 'tabs.issues',     icon: '📤' },
+  transfers:  { id: 'transfers',  label: 'tabs.transfers',  icon: '🔀' },
+  reports:    { id: 'reports',    label: 'tabs.reports',    icon: '📊' },
+  settings:   { id: 'settings',  label: 'tabs.settings',   icon: '⚙️' },
 };
 
 interface TabsState {

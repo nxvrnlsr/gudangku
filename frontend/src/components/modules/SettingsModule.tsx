@@ -1,8 +1,11 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { authApi, usersApi, reportsApi } from '@/services/api';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useT } from '@/hooks/useT';
+import { useLanguageStore, type Lang } from '@/stores/language.store';
+import { ROLE_INFO } from '@/lib/permissions';
 import {
   IconSettings, IconUser, IconClose, IconPlus, IconCheck,
 } from '@/components/ui/Icons';
@@ -43,16 +46,23 @@ const IconFolder2 = (p: { size?: number; color?: string }) => (
   </svg>
 );
 
-// ── Role badge color map ──────────────────────────────────────
+// ── Role badge color map (canonical names) ────────────────────
 const ROLE_CLASS: Record<string, string> = {
-  admin:       'badge-danger',
-  manager:     'badge-warning',
-  staff:       'badge-info',
-  viewer:      'badge-neutral',
-  warehouse:   'badge-success',
+  admin:            'badge-danger',
+  regional_manager: 'badge-warning',
+  kepala_gudang:    'badge-info',
+  staff_gudang:     'badge-success',
+  viewer:           'badge-neutral',
+  // legacy fallbacks
+  manager:          'badge-warning',
+  staff:            'badge-info',
+  warehouse:        'badge-info',
 };
 
-type Tab = 'password' | 'users' | 'export';
+/** Get display label for a role name */
+const getRoleLabel = (name: string) => ROLE_INFO[name]?.label ?? name.replace(/_/g, ' ');
+
+type Tab = 'language' | 'password' | 'users' | 'export';
 
 // ── Modal — defined OUTSIDE SettingsModule to prevent remount on every render ──
 function Modal({ title, onClose, children }: {
@@ -82,8 +92,13 @@ export default function SettingsModule() {
   const { user: me } = useAuthStore();
   const permissions  = usePermissions();
   const isAdmin      = permissions.canManageUsers;
+  const { t }        = useT();
+  const { lang, setLang } = useLanguageStore();
+  // Stable ref so callbacks don't re-create when language changes
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
 
-  const [activeTab, setActiveTab] = useState<Tab>('password');
+  const [activeTab, setActiveTab] = useState<Tab>('language');
 
   // ── Change Password state ─────────────────────────────────
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -92,19 +107,19 @@ export default function SettingsModule() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pwForm.next !== pwForm.confirm) {
-      toast.error('Konfirmasi password tidak cocok.'); return;
+      toast.error(t('settings.passwordMatch')); return;
     }
     if (pwForm.next.length < 8) {
-      toast.error('Password baru minimal 8 karakter.'); return;
+      toast.error(t('settings.passwordMinLen')); return;
     }
     setPwLoading(true);
     try {
       await authApi.changePassword(pwForm.current, pwForm.next);
-      toast.success('Password berhasil diubah!');
+      toast.success(t('settings.passwordSuccess'));
       setPwForm({ current: '', next: '', confirm: '' });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? 'Gagal mengubah password.');
+      toast.error(msg ?? t('settings.passwordError'));
     } finally { setPwLoading(false); }
   };
 
@@ -134,9 +149,9 @@ export default function SettingsModule() {
     try {
       const uRes = await usersApi.list();
       setUsers(uRes.data.data);
-    } catch { toast.error('Gagal memuat data pengguna.'); }
+    } catch { toast.error(tRef.current('settings.loadUsersError')); }
     finally { setULoading(false); }
-  }, []);
+  }, []); // stable — uses tRef to avoid re-creation on lang change
 
   useEffect(() => {
     if (activeTab === 'users' && isAdmin) {
@@ -154,13 +169,13 @@ export default function SettingsModule() {
         password: newForm.password,
         role_ids: newForm.role_id ? [newForm.role_id] : [],
       });
-      toast.success('Pengguna berhasil dibuat!');
+      toast.success(t('settings.userCreated'));
       setShowCreate(false);
       setNewForm({ name: '', email: '', password: '', role_id: '' });
       loadUsers();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg ?? 'Gagal membuat pengguna.');
+      toast.error(msg ?? t('settings.userCreateError'));
     }
   };
 
@@ -168,9 +183,9 @@ export default function SettingsModule() {
   const handleToggleActive = async (u: AppUser) => {
     try {
       await usersApi.update(u.id, { is_active: !u.is_active });
-      toast.success(`Pengguna ${u.is_active ? 'dinonaktifkan' : 'diaktifkan'}.`);
+      toast.success(t('settings.statusToggled'));
       loadUsers();
-    } catch { toast.error('Gagal mengubah status.'); }
+    } catch { toast.error(t('settings.statusError')); }
   };
 
   const handleUpdateRoles = async (e: React.FormEvent) => {
@@ -181,23 +196,23 @@ export default function SettingsModule() {
         name: editUser.name,
         role_ids: editUser.roles.map(rName => roles.find(r => r.name === rName)?.id ?? '').filter(Boolean),
       });
-      toast.success('Role berhasil diperbarui.');
+      toast.success(t('settings.roleUpdated'));
       setEditUser(null);
       loadUsers();
-    } catch { toast.error('Gagal memperbarui role.'); }
+    } catch { toast.error(t('settings.roleUpdateError')); }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetTarget || resetPw.length < 8) {
-      toast.error('Password minimal 8 karakter.'); return;
+      toast.error(t('settings.passwordMinLen')); return;
     }
     try {
       await usersApi.resetPassword(resetTarget.id, resetPw);
-      toast.success(`Password ${resetTarget.name} berhasil direset.`);
+      toast.success(t('settings.resetSuccess'));
       setResetTarget(null);
       setResetPw('');
-    } catch { toast.error('Gagal reset password.'); }
+    } catch { toast.error(t('settings.resetError')); }
   };
 
   // ── Export path state ─────────────────────────────────────
@@ -214,16 +229,17 @@ export default function SettingsModule() {
     setEpLoading(true);
     try {
       await reportsApi.updateExportPath(exportPath);
-      toast.success('Path export berhasil disimpan.');
-    } catch { toast.error('Gagal menyimpan path.'); }
+      toast.success(t('settings.pathSaved'));
+    } catch { toast.error(t('settings.pathError')); }
     finally { setEpLoading(false); }
   };
 
   // ── TAB CONFIG ────────────────────────────────────────────
   const TABS: { id: Tab; label: string; Icon: React.ComponentType<{size?:number;color?:string}> }[] = [
-    { id: 'password', label: 'Ganti Password', Icon: IconLock },
-    ...(isAdmin ? [{ id: 'users' as Tab, label: 'Manajemen User', Icon: IconUsers }] : []),
-    { id: 'export',   label: 'Path Export',    Icon: IconFolder2 },
+    { id: 'language', label: t('settings.language'),       Icon: IconSettings },
+    { id: 'password', label: t('settings.changePassword'), Icon: IconLock },
+    ...(isAdmin ? [{ id: 'users' as Tab, label: t('settings.userManagement'), Icon: IconUsers }] : []),
+    { id: 'export',   label: t('settings.exportPath'),     Icon: IconFolder2 },
   ];
 
   return (
@@ -231,49 +247,77 @@ export default function SettingsModule() {
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconSettings size={20} color="var(--icon-muted)" /> Pengaturan
+          <IconSettings size={20} color="var(--icon-muted)" /> {t('settings.title')}
         </h1>
       </div>
 
       {/* Tab Navigation */}
       <div className="flex gap-2" style={{ flexShrink: 0 }}>
-        {TABS.map(t => (
-          <button key={t.id}
-            className={`btn ${activeTab === t.id ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveTab(t.id)}
+        {TABS.map(tab => (
+          <button key={tab.id}
+            className={`btn ${activeTab === tab.id ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setActiveTab(tab.id)}
             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <t.Icon size={13} /> {t.label}
+            <tab.Icon size={13} /> {tab.label}
           </button>
         ))}
       </div>
+
+      {/* ── TAB: Language ─────────────────────────────────── */}
+      {activeTab === 'language' && (
+        <div className="panel" style={{ maxWidth: 480 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <IconSettings size={15} color="var(--icon-primary)" /> {t('settings.language')}
+          </div>
+          <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', margin: 0 }}>
+              {t('settings.languageDesc')}
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {(['en', 'id'] as Lang[]).map(code => (
+                <button
+                  key={code}
+                  onClick={() => setLang(code)}
+                  className={`btn ${lang === code ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, justifyContent: 'center' }}
+                >
+                  <span style={{ fontSize: 20 }}>{code === 'en' ? '🇺🇸' : '🇮🇩'}</span>
+                  {code === 'en' ? t('settings.english') : t('settings.indonesian')}
+                  {lang === code && <IconCheck size={14} />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── TAB: Ganti Password ──────────────────────────── */}
       {activeTab === 'password' && (
         <div className="panel" style={{ maxWidth: 480 }}>
           <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <IconLock size={15} color="var(--icon-primary)" /> Ganti Password
+            <IconLock size={15} color="var(--icon-primary)" /> {t('settings.changePassword')}
           </div>
           <form onSubmit={handleChangePassword} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="form-group">
-              <label className="form-label">Password Saat Ini</label>
+              <label className="form-label">{t('settings.currentPassword')}</label>
               <input className="form-input" type="password" required placeholder="••••••••"
                 value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">Password Baru</label>
-              <input className="form-input" type="password" required placeholder="Min. 8 karakter"
+              <label className="form-label">{t('settings.newPassword')}</label>
+              <input className="form-input" type="password" required placeholder={t('settings.minChars')}
                 value={pwForm.next} onChange={e => setPwForm(f => ({ ...f, next: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label className="form-label">Konfirmasi Password Baru</label>
-              <input className="form-input" type="password" required placeholder="Ulangi password baru"
+              <label className="form-label">{t('settings.confirmPassword')}</label>
+              <input className="form-input" type="password" required placeholder={t('settings.repeatPassword')}
                 value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} />
             </div>
             <button className="btn btn-primary" type="submit" disabled={pwLoading}
               style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start' }}>
               {pwLoading ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <IconCheck size={14} />}
-              Simpan Password
+              {t('settings.savePassword')}
             </button>
           </form>
         </div>
@@ -285,7 +329,7 @@ export default function SettingsModule() {
           <div className="flex gap-3" style={{ flexShrink: 0, justifyContent: 'flex-end' }}>
             <button className="btn btn-primary" onClick={() => setShowCreate(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconPlus size={14} /> Tambah User
+              <IconPlus size={14} /> {t('settings.addUser')}
             </button>
           </div>
 
@@ -307,7 +351,9 @@ export default function SettingsModule() {
                         <td>
                           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                             {u.roles.map(r => (
-                              <span key={r} className={`badge ${ROLE_CLASS[r] ?? 'badge-neutral'}`}>{r}</span>
+                              <span key={r} className={`badge ${ROLE_CLASS[r] ?? 'badge-neutral'}`}>
+                                {getRoleLabel(r)}
+                              </span>
                             ))}
                           </div>
                         </td>
@@ -414,12 +460,9 @@ export default function SettingsModule() {
                           background: selected ? 'rgba(59,130,246,0.15)' : 'var(--bg-surface)',
                           border: `1px solid ${selected ? 'var(--primary)' : 'var(--border)'}`,
                           borderRadius: 'var(--r-md)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                          textAlign: 'left',
+                          cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
                         }}
                       >
-                        {/* Radio dot */}
                         <div style={{
                           width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
                           border: `2px solid ${selected ? 'var(--primary)' : 'var(--border-bright)'}`,
@@ -431,13 +474,13 @@ export default function SettingsModule() {
                         <span style={{
                           fontSize: 'var(--text-sm)', fontWeight: selected ? 600 : 400,
                           color: selected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                          textTransform: 'capitalize',
-                        }}>{r.name}</span>
+                        }}>{getRoleLabel(r.name)}</span>
                       </button>
                     );
                   })}
                 </div>
               )}
+
             </div>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
@@ -461,12 +504,12 @@ export default function SettingsModule() {
             </div>
             <div className="form-group">
               <label className="form-label">Role</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
                 {roles.map(r => {
                   const selected = editUser.roles.includes(r.name);
+                  const info = ROLE_INFO[r.name];
                   return (
                     <button key={r.id} type="button"
-                      className={`btn btn-sm ${selected ? 'btn-primary' : 'btn-secondary'}`}
                       onClick={() => setEditUser(u => {
                         if (!u) return u;
                         const next = selected
@@ -474,8 +517,26 @@ export default function SettingsModule() {
                           : [...u.roles, r.name];
                         return { ...u, roles: next };
                       })}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 12,
+                        padding: '10px 14px', textAlign: 'left',
+                        background: selected ? 'rgba(59,130,246,0.12)' : 'var(--bg-surface)',
+                        border: `1px solid ${selected ? 'var(--primary)' : 'var(--border)'}`,
+                        borderRadius: 'var(--r-md)', cursor: 'pointer', transition: 'all 0.15s',
+                      }}
                     >
-                      {selected && <IconCheck size={11} />} {r.name}
+                      <span style={{ fontSize: 18, lineHeight: 1.3 }}>{info?.emoji ?? '👤'}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: selected ? 'var(--primary)' : 'var(--text-primary)' }}>
+                          {info?.label ?? r.name}
+                        </div>
+                        {info && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                            {info.description}
+                          </div>
+                        )}
+                      </div>
+                      {selected && <IconCheck size={14} color="var(--primary)" />}
                     </button>
                   );
                 })}

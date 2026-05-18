@@ -2,41 +2,33 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../../config/database');
 
-/**
- * POST /api/auth/login
- * Login dengan email & password, mendapatkan JWT token
- */
+/** POST /api/auth/login */
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
-      return res.status(400).json({ status: 'error', message: 'Email dan password wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('auth.emailPasswordRequired') });
     }
 
-    // Cari user berdasarkan email
     const result = await db.query(
       'SELECT id, name, email, password_hash, is_active FROM users WHERE email = $1',
       [email.toLowerCase().trim()]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ status: 'error', message: 'Email atau password salah.' });
+      return res.status(401).json({ status: 'error', message: req.t('auth.invalidCredentials') });
     }
 
     const user = result.rows[0];
-
     if (!user.is_active) {
-      return res.status(401).json({ status: 'error', message: 'Akun Anda tidak aktif. Hubungi administrator.' });
+      return res.status(401).json({ status: 'error', message: req.t('auth.accountInactive') });
     }
 
-    // Verifikasi password
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
-      return res.status(401).json({ status: 'error', message: 'Email atau password salah.' });
+      return res.status(401).json({ status: 'error', message: req.t('auth.invalidCredentials') });
     }
 
-    // Ambil roles user
     const rolesResult = await db.query(
       `SELECT r.name, r.permissions, ur.warehouse_id, ur.region_id
        FROM user_roles ur
@@ -45,10 +37,8 @@ const login = async (req, res) => {
       [user.id]
     );
 
-    // Update last login
     await db.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -57,7 +47,7 @@ const login = async (req, res) => {
 
     return res.status(200).json({
       status: 'success',
-      message: 'Login berhasil.',
+      message: req.t('auth.loginSuccess'),
       data: {
         token,
         user: {
@@ -71,50 +61,39 @@ const login = async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('serverError') });
   }
 };
 
-/**
- * GET /api/auth/me
- * Ambil data user yang sedang login (butuh token)
- */
+/** GET /api/auth/me */
 const getMe = async (req, res) => {
-  return res.status(200).json({
-    status: 'success',
-    data: { user: req.user },
-  });
+  return res.status(200).json({ status: 'success', data: { user: req.user } });
 };
 
-/**
- * POST /api/auth/change-password
- * Ganti password user yang sedang login
- */
+/** POST /api/auth/change-password */
 const changePassword = async (req, res) => {
   try {
     const { current_password, new_password } = req.body;
-
     if (!current_password || !new_password) {
-      return res.status(400).json({ status: 'error', message: 'Password lama dan baru wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('auth.passwordRequired') });
     }
     if (new_password.length < 8) {
-      return res.status(400).json({ status: 'error', message: 'Password baru minimal 8 karakter.' });
+      return res.status(400).json({ status: 'error', message: req.t('auth.passwordMinLength') });
     }
 
     const result = await db.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
     const isValid = await bcrypt.compare(current_password, result.rows[0].password_hash);
-
     if (!isValid) {
-      return res.status(401).json({ status: 'error', message: 'Password lama salah.' });
+      return res.status(401).json({ status: 'error', message: req.t('auth.currentPasswordWrong') });
     }
 
     const newHash = await bcrypt.hash(new_password, 12);
     await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, req.user.id]);
 
-    return res.status(200).json({ status: 'success', message: 'Password berhasil diubah.' });
+    return res.status(200).json({ status: 'success', message: req.t('auth.passwordChanged') });
   } catch (err) {
     console.error('Change password error:', err);
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('serverError') });
   }
 };
 

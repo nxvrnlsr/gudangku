@@ -34,7 +34,7 @@ const getAll = async (req, res) => {
 
     return res.json({ status: 'success', data: rows.rows });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('transfers.serverError') });
   }
 };
 
@@ -62,10 +62,10 @@ const getById = async (req, res) => {
         WHERE stl.transfer_id = $1
       `, [req.params.id]),
     ]);
-    if (header.rows.length === 0) return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+    if (header.rows.length === 0) return res.status(404).json({ status: 'error', message: req.t('transfers.notFound') });
     return res.json({ status: 'success', data: { ...header.rows[0], lines: lines.rows } });
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('transfers.serverError') });
   }
 };
 
@@ -77,10 +77,10 @@ const create = async (req, res) => {
     const { from_warehouse_id, to_warehouse_id, transfer_date, notes, lines } = req.body;
 
     if (!from_warehouse_id || !to_warehouse_id || !lines || lines.length === 0) {
-      return res.status(400).json({ status: 'error', message: 'Gudang asal, tujuan, dan minimal 1 baris wajib diisi.' });
+      return res.status(400).json({ status: 'error', message: req.t('transfers.warehouseRequired') });
     }
     if (from_warehouse_id === to_warehouse_id) {
-      return res.status(400).json({ status: 'error', message: 'Gudang asal dan tujuan tidak boleh sama.' });
+      return res.status(400).json({ status: 'error', message: req.t('transfers.sameWarehouse') });
     }
 
     const docNumber = await generateDocNumber(client, 'ST');
@@ -100,10 +100,10 @@ const create = async (req, res) => {
     }
 
     await client.query('COMMIT');
-    return res.status(201).json({ status: 'success', message: `Transfer ${docNumber} berhasil dibuat.`, data: transfer });
+    return res.status(201).json({ status: 'success', message: req.t('transfers.created', docNumber), data: transfer });
   } catch (err) {
     await client.query('ROLLBACK');
-    return res.status(500).json({ status: 'error', message: 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: req.t('transfers.serverError') });
   } finally {
     client.release();
   }
@@ -128,11 +128,11 @@ const dispatch = async (req, res) => {
       WHERE st.id = $1 GROUP BY st.id
     `, [id]);
 
-    if (transferResult.rows.length === 0) return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+    if (transferResult.rows.length === 0) return res.status(404).json({ status: 'error', message: req.t('transfers.notFound') });
     const transfer = transferResult.rows[0];
 
     if (transfer.status !== 'draft') {
-      return res.status(400).json({ status: 'error', message: `Status '${transfer.status}' tidak bisa dikirim.` });
+      return res.status(400).json({ status: 'error', message: req.t('transfers.invalidStatusDispatch', transfer.status) });
     }
 
     // Proses setiap baris — FEFO dari gudang asal
@@ -199,10 +199,10 @@ const dispatch = async (req, res) => {
     );
 
     await client.query('COMMIT');
-    return res.json({ status: 'success', message: `Transfer ${transfer.doc_number} dikirim. Stok gudang asal berkurang.` });
+    return res.json({ status: 'success', message: req.t('transfers.dispatched', transfer.doc_number) });
   } catch (err) {
     await client.query('ROLLBACK');
-    return res.status(500).json({ status: 'error', message: err.message || 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: err.message || req.t('transfers.serverError') });
   } finally {
     client.release();
   }
@@ -227,11 +227,11 @@ const receive = async (req, res) => {
       WHERE st.id = $1 GROUP BY st.id
     `, [id]);
 
-    if (transferResult.rows.length === 0) return res.status(404).json({ status: 'error', message: 'Dokumen tidak ditemukan.' });
+    if (transferResult.rows.length === 0) return res.status(404).json({ status: 'error', message: req.t('transfers.notFound') });
     const transfer = transferResult.rows[0];
 
     if (transfer.status !== 'in_transit') {
-      return res.status(400).json({ status: 'error', message: `Status harus 'in_transit' untuk diterima. Status saat ini: '${transfer.status}'.` });
+      return res.status(400).json({ status: 'error', message: req.t('transfers.invalidStatusReceive', transfer.status) });
     }
 
     const { qty_received_lines } = req.body; // [{transfer_line_id, qty_received}]
@@ -289,10 +289,10 @@ const receive = async (req, res) => {
     );
 
     await client.query('COMMIT');
-    return res.json({ status: 'success', message: `Transfer ${transfer.doc_number} diterima. Stok gudang tujuan bertambah.` });
+    return res.json({ status: 'success', message: req.t('transfers.received', transfer.doc_number) });
   } catch (err) {
     await client.query('ROLLBACK');
-    return res.status(500).json({ status: 'error', message: err.message || 'Terjadi kesalahan server.' });
+    return res.status(500).json({ status: 'error', message: err.message || req.t('transfers.serverError') });
   } finally {
     client.release();
   }

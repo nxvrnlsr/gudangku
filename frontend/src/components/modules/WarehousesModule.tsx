@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useEffect, useState, useCallback } from 'react';
 import { warehousesApi } from '@/services/api';
 import { IconWarehouse, IconSearch } from '@/components/ui/Icons';
@@ -10,6 +11,7 @@ interface Warehouse { id: string; name: string; city_name: string; region_name: 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
 export default function WarehousesModule() {
+  const { t } = useT();
   const [warehouses, setWarehouses]     = useState<Warehouse[]>([]);
   const [selectedWh, setSelectedWh]    = useState<string>('');
   const [stock, setStock]              = useState<StockItem[]>([]);
@@ -25,7 +27,7 @@ export default function WarehousesModule() {
       setWarehouses(r.data.data);
       if (r.data.data.length > 0) setSelectedWh(r.data.data[0].id);
       setLoadingWh(false);
-    }).catch(() => { toast.error('Gagal memuat gudang'); setLoadingWh(false); });
+    }).catch(() => { toast.error(t('warehouses.loadError')); setLoadingWh(false); });
   }, []);
 
   const fetchStock = useCallback(async () => {
@@ -34,7 +36,7 @@ export default function WarehousesModule() {
     try {
       const res = await warehousesApi.getStock(selectedWh);
       setStock(res.data.data);
-    } catch { toast.error('Gagal memuat stok'); } finally { setLoadingStock(false); }
+    } catch { toast.error(t('warehouses.stockLoadError')); } finally { setLoadingStock(false); }
   }, [selectedWh]);
 
   useEffect(() => { fetchStock(); }, [fetchStock]);

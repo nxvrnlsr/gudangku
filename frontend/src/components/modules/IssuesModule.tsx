@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/hooks/useT';
 import { useEffect, useState, useCallback } from 'react';
 import { issuesApi, warehousesApi } from '@/services/api';
 import ItemSelector from '@/components/ui/ItemSelector';
@@ -33,6 +34,7 @@ const newLine = (): LineItem => ({ item_id: '', item_name: '', unit_symbol: '', 
 
 /* ─── Component ─────────────────────────────────────────────── */
 export default function IssuesModule() {
+  const { t } = useT();
   const [issues,       setIssues]       = useState<Issue[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [filterStatus, setFilter]       = useState('');
@@ -53,7 +55,7 @@ export default function IssuesModule() {
     try {
       const res = await issuesApi.getAll({ status: filterStatus || undefined, limit: 100 });
       setIssues(res.data.data);
-    } catch { toast.error('Gagal memuat data'); } finally { setLoading(false); }
+    } catch { toast.error(t('issues.loadError')); } finally { setLoading(false); }
   }, [filterStatus]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -71,8 +73,8 @@ export default function IssuesModule() {
 
   /* ── Submit ───────────────────────── */
   const handleSave = async (confirmAfter: boolean) => {
-    if (!form.warehouse_id) { toast.error('Pilih gudang asal'); return; }
-    if (lines.some(l => !l.item_id || !l.qty_requested)) { toast.error('Semua baris harus memiliki barang dan qty'); return; }
+    if (!form.warehouse_id) { toast.error(t('issues.warehouseRequired')); return; }
+    if (lines.some(l => !l.item_id || !l.qty_requested)) { toast.error(t('common.noData')); return; }
     setSaving(true);
     try {
       const body = {
@@ -94,7 +96,7 @@ export default function IssuesModule() {
       setLines([newLine()]);
       fetchData();
     } catch (err: unknown) {
-      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Gagal menyimpan');
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || t('issues.serverError'));
     } finally { setSaving(false); }
   };
 

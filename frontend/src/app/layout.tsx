@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+import UpdateBanner from '@/components/ui/UpdateBanner';
 
 export const metadata: Metadata = {
   title: 'GudangKu — Sistem Manajemen Stok Gudang',
@@ -26,6 +27,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             error:   { iconTheme: { primary: '#EF4444', secondary: '#162033' } },
           }}
         />
+        {/* Auto-update notification — hanya muncul di Electron */}
+        <UpdateBanner />
       </body>
     </html>
   );

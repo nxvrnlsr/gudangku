@@ -2,6 +2,7 @@
 import { useTabsStore } from '@/stores/tabs.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useT } from '@/hooks/useT';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import {
@@ -45,23 +46,23 @@ export default function TabBar() {
   const { openTabs, activeTabId, setActive, closeTab, openTab } = useTabsStore();
   const { user, logout } = useAuthStore();
   const permissions = usePermissions();
+  const { t } = useT();
   const router = useRouter();
 
   const handleLogout = () => {
     logout();
-    toast.success('Berhasil keluar.');
+    toast.success(t('auth.logoutSuccess'));
     router.replace('/');
   };
 
-  // Guard: cek permission sebelum buka tab
+  // Guard: check permission before opening tab
   const handleOpenTab = (id: TabId) => {
     if (!permissions.allowedTabs.includes(id)) {
-      toast.error('Anda tidak memiliki akses ke fitur ini.');
+      toast.error(t('common.forbidden'));
       return;
     }
     openTab(id);
   };
-  // Make handleOpenTab available globally via store if needed
   void handleOpenTab;
 
   const primaryRole = user?.roles?.[0]?.name ?? 'user';
@@ -155,13 +156,13 @@ export default function TabBar() {
                 <TabIcon size={14} />
               </span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 'var(--text-xs)', fontWeight: isActive ? 600 : 500 }}>
-                {tab.label}
+                {t(tab.label)}
               </span>
               {tab.id !== 'dashboard' && (
                 <button
                   className="tab-close"
                   onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
-                  title="Tutup tab"
+                  title={t('common.close')}
                 >
                   <IconClose size={11} />
                 </button>
