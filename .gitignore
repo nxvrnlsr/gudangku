@@ -36,3 +36,6 @@ coverage/
 
 dist-electron/
 
+# Internal planning docs (local only, tidak perlu di repo)
+planning/
+
