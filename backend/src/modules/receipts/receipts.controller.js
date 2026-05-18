@@ -138,7 +138,9 @@ const create = async (req, res) => {
           `SELECT base_unit_id FROM items WHERE id = $1`, [itemId]
         );
         if (itemRes.rows.length === 0) {
-          throw new Error(`Item dengan id ${itemId} tidak ditemukan.`);
+          const notFoundErr = new Error(`Item dengan id ${itemId} tidak ditemukan.`);
+          notFoundErr.statusCode = 400;
+          throw notFoundErr;
         }
         unitId = itemRes.rows[0].base_unit_id;
       }
@@ -188,7 +190,9 @@ const create = async (req, res) => {
       for (const line of lineResults) {
         // Validasi batch jika langsung konfirmasi
         if (!line.batch_number || !line.expiry_date) {
-          throw new Error(`No. Batch dan Tanggal Kadaluarsa wajib diisi untuk setiap baris saat konfirmasi langsung.`);
+          const batchErr = new Error(`No. Batch dan Tanggal Kadaluarsa wajib diisi untuk setiap baris saat konfirmasi langsung.`);
+          batchErr.statusCode = 400;
+          throw batchErr;
         }
 
         const batchResult = await client.query(`
@@ -234,8 +238,9 @@ const create = async (req, res) => {
     });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Receipt create error:', err);
-    return res.status(500).json({ status: 'error', message: err.message || req.t('receipts.serverError') });
+    const statusCode = err.statusCode || 500;
+    if (statusCode === 500) console.error('Receipt create error:', err);
+    return res.status(statusCode).json({ status: 'error', message: err.message || req.t('receipts.serverError') });
   } finally {
     client.release();
   }
@@ -298,7 +303,9 @@ const confirm = async (req, res) => {
     for (const line of receipt.lines) {
       const batchInfo = batchMap[line.id];
       if (!batchInfo || !batchInfo.batch_number) {
-        throw new Error(`No. batch untuk baris item_id ${line.item_id} tidak ditemukan.`);
+        const batchErr = new Error(`No. batch untuk baris item_id ${line.item_id} tidak ditemukan.`);
+        batchErr.statusCode = 400;
+        throw batchErr;
       }
 
       // ── Buat Batch ──────────────────────────────────────
@@ -343,8 +350,9 @@ const confirm = async (req, res) => {
     return res.json({ status: 'success', message: req.t('receipts.confirmed') });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Receipt confirm error:', err);
-    return res.status(500).json({ status: 'error', message: err.message || req.t('receipts.serverError') });
+    const statusCode = err.statusCode || 500;
+    if (statusCode === 500) console.error('Receipt confirm error:', err);
+    return res.status(statusCode).json({ status: 'error', message: err.message || req.t('receipts.serverError') });
   } finally {
     client.release();
   }

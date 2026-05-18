@@ -143,7 +143,9 @@ const confirm = async (req, res) => {
 
       if (currentStock < qtyNeeded) {
         const itemResult = await client.query('SELECT name FROM items WHERE id = $1', [line.item_id]);
-        throw new Error(`Stok ${itemResult.rows[0]?.name} tidak cukup. Tersedia: ${currentStock}, Dibutuhkan: ${qtyNeeded}`);
+        const stockErr = new Error(`Stok tidak cukup: ${itemResult.rows[0]?.name}. Tersedia: ${currentStock}, Dibutuhkan: ${qtyNeeded}`);
+        stockErr.statusCode = 400;
+        throw stockErr;
       }
 
       // Ambil batch sesuai FEFO: urutkan expiry_date ASC (paling dekat expire duluan)
@@ -206,8 +208,9 @@ const confirm = async (req, res) => {
     return res.json({ status: 'success', message: req.t('issues.confirmed') });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Issue confirm error:', err);
-    return res.status(500).json({ status: 'error', message: err.message || req.t('issues.serverError') });
+    const statusCode = err.statusCode || 500;
+    if (statusCode === 500) console.error('Issue confirm error:', err);
+    return res.status(statusCode).json({ status: 'error', message: err.message || req.t('issues.serverError') });
   } finally {
     client.release();
   }
