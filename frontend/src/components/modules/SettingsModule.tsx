@@ -10,6 +10,7 @@ import {
   IconSettings, IconUser, IconClose, IconPlus, IconCheck,
 } from '@/components/ui/Icons';
 import toast from 'react-hot-toast';
+import LocationManagementTab from './LocationManagementTab';
 
 // ── Types ─────────────────────────────────────────────────────
 interface Role   { id: string; name: string; }
@@ -45,6 +46,14 @@ const IconFolder2 = (p: { size?: number; color?: string }) => (
     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
   </svg>
 );
+const IconMapPin2 = (p: { size?: number; color?: string }) => (
+  <svg width={p.size??18} height={p.size??18} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"
+    style={{ color: p.color ?? 'currentColor' }} aria-hidden>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
 
 // ── Role badge color map (canonical names) ────────────────────
 const ROLE_CLASS: Record<string, string> = {
@@ -62,7 +71,7 @@ const ROLE_CLASS: Record<string, string> = {
 /** Get display label for a role name */
 const getRoleLabel = (name: string) => ROLE_INFO[name]?.label ?? name.replace(/_/g, ' ');
 
-type Tab = 'language' | 'password' | 'users' | 'export';
+type Tab = 'language' | 'password' | 'users' | 'export' | 'locations';
 
 // ── Modal — defined OUTSIDE SettingsModule to prevent remount on every render ──
 function Modal({ title, onClose, children }: {
@@ -236,10 +245,13 @@ export default function SettingsModule() {
 
   // ── TAB CONFIG ────────────────────────────────────────────
   const TABS: { id: Tab; label: string; Icon: React.ComponentType<{size?:number;color?:string}> }[] = [
-    { id: 'language', label: t('settings.language'),       Icon: IconSettings },
-    { id: 'password', label: t('settings.changePassword'), Icon: IconLock },
-    ...(isAdmin ? [{ id: 'users' as Tab, label: t('settings.userManagement'), Icon: IconUsers }] : []),
-    { id: 'export',   label: t('settings.exportPath'),     Icon: IconFolder2 },
+    { id: 'language',  label: t('settings.language'),       Icon: IconSettings },
+    { id: 'password',  label: t('settings.changePassword'), Icon: IconLock },
+    ...(isAdmin ? [
+      { id: 'users'     as Tab, label: t('settings.userManagement'), Icon: IconUsers },
+      { id: 'locations' as Tab, label: 'Lokasi Gudang',              Icon: IconMapPin2 },
+    ] : []),
+    { id: 'export',    label: t('settings.exportPath'),     Icon: IconFolder2 },
   ];
 
   return (
@@ -394,6 +406,11 @@ export default function SettingsModule() {
             )}
           </div>
         </>
+      )}
+
+      {/* ── TAB: Lokasi Gudang (admin only) ──────────────── */}
+      {activeTab === 'locations' && isAdmin && (
+        <LocationManagementTab />
       )}
 
       {/* ── TAB: Export Path ─────────────────────────────── */}

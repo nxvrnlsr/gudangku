@@ -63,10 +63,27 @@ export const itemsApi = {
 
 // ── Warehouses ──────────────────────────────────────────────
 export const warehousesApi = {
+  // Read
   getAll:     (params?: object)  => api.get('/warehouses', { params }),
   getById:    (id: string)       => api.get(`/warehouses/${id}`),
   getStock:   (id: string, params?: object) => api.get(`/warehouses/${id}/stock`, { params }),
-  getRegions: () => api.get('/warehouses/regions'),
+
+  // Regions CRUD
+  getRegions:    ()                      => api.get('/warehouses/regions'),
+  createRegion:  (data: object)          => api.post('/warehouses/regions', data),
+  updateRegion:  (id: string, data: object) => api.put(`/warehouses/regions/${id}`, data),
+  deleteRegion:  (id: string)            => api.delete(`/warehouses/regions/${id}`),
+
+  // Cities CRUD
+  getCities:     (params?: object)       => api.get('/warehouses/cities', { params }),
+  createCity:    (data: object)          => api.post('/warehouses/cities', data),
+  updateCity:    (id: string, data: object) => api.put(`/warehouses/cities/${id}`, data),
+  deleteCity:    (id: string)            => api.delete(`/warehouses/cities/${id}`),
+
+  // Warehouses CRUD
+  create:        (data: object)          => api.post('/warehouses', data),
+  update:        (id: string, data: object) => api.put(`/warehouses/${id}`, data),
+  delete:        (id: string)            => api.delete(`/warehouses/${id}`),
 };
 
 // ── Batches ─────────────────────────────────────────────────
